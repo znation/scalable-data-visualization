@@ -1,0 +1,11 @@
+{
+  "name": "talk_demo",
+  "version": "1.0.0",
+  "description": "Demo for React.js Conf 2015 talk",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "",
+  "license": "ISC"
+}
