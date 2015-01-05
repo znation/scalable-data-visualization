@@ -11,6 +11,16 @@
   "dependencies": {
     "binary": "^0.3.0",
     "node-static": "^0.7.6",
+    "react": "^0.12.2",
     "ws": "^0.6.4"
+  },
+  "devDependencies": {
+    "gulp": "^3.8.10",
+    "gulp-6to5": "^2.0.0",
+    "gulp-newer": "^0.5.0",
+    "gulp-react": "^2.0.0",
+    "gulp-rename": "^1.2.0",
+    "gulp-watchify": "^0.2.0",
+    "watchify": "^0.6.4"
   }
 }
