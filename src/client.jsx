@@ -6,10 +6,26 @@ var ws = require('ws');
 
 // constants
 var NUM_HISTOGRAMS = 2;
+var HISTOGRAM_BINS = 1000;
+
+var Histogram = React.createClass({
+  render: function() {
+    var values = this.props.data.values();
+    var sum = 0;
+    for (let n of values) {
+      sum += n;
+    };
+    return (
+      <div>
+        {sum}
+      </div>
+    );
+  }
+});
 
 var Dashboard = React.createClass({
   getInitialState: function() {
-    return { data: new ArrayBuffer(2000) };
+    return { data: new ArrayBuffer(HISTOGRAM_BINS * 4 * 2) };
   },
   componentDidMount: function() {
     var wsc = new ws('ws://localhost:8081');
@@ -29,6 +45,10 @@ var Dashboard = React.createClass({
         </div>
         <div className="row">
           <div className="col-md-6">
+            <Histogram data={new Uint32Array(this.state.data, 0)} />
+          </div>
+          <div className="col-md-6">
+            <Histogram data={new Uint32Array(this.state.data, HISTOGRAM_BINS * 4)} />
           </div>
         </div>
       </div>

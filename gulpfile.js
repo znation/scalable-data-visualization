@@ -25,7 +25,8 @@ gulp.task('server', function() {
 
 var bundler = watchify(browserify('./src/client.jsx', watchify.args));
 // add any other browserify options or transforms here
-bundler.transform('reactify');
+bundler.transform('reactify', {'es6': true});
+bundler.transform('6to5ify');
 
 gulp.task('client', bundle); // so you can run `gulp js` to build the file
 bundler.on('update', bundle); // on any dep update, runs the bundler

@@ -1,43 +1,45 @@
 (function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof require=="function"&&require;if(!u&&a)return a(o,!0);if(i)return i(o,!0);var f=new Error("Cannot find module '"+o+"'");throw f.code="MODULE_NOT_FOUND",f}var l=n[o]={exports:{}};t[o][0].call(l.exports,function(e){var n=t[o][1][e];return s(n?n:e)},l,l.exports,e,t,n,r)}return n[o].exports}var i=typeof require=="function"&&require;for(var o=0;o<r.length;o++)s(r[o]);return s})({"./src/client.jsx":[function(require,module,exports){
-'use strict';
+"use strict";
 
 // external deps
-var React = require('react');
-var ws = require('ws');
+var React = require("react");
+var ws = require("ws");
 
 // constants
 var NUM_HISTOGRAMS = 2;
+var HISTOGRAM_BINS = 1000;
 
-var Dashboard = React.createClass({displayName: "Dashboard",
-  getInitialState: function() {
-    return { data: new ArrayBuffer(2000) };
-  },
-  componentDidMount: function() {
-    var wsc = new ws('ws://localhost:8081');
-    wsc.binaryType = 'arraybuffer';
-    wsc.onmessage = function(message) {
-      this.setState({data: message.data});
-    }.bind(this);
-  },
-  render: function() {
-    return (
-      React.createElement("div", {className: "container"}, 
-        React.createElement("div", {className: "row"}, 
-          React.createElement("div", {className: "col-xs-12"}, 
-            React.createElement("h1", null, "Scalable Data Visualization"), 
-            React.createElement("h2", null, "Visualizing the Bitcoin Blockchain")
-          )
-        ), 
-        React.createElement("div", {className: "row"}, 
-          React.createElement("div", {className: "col-md-6"}
-          )
-        )
-      )
-    );
+var Histogram = React.createClass({ displayName: "Histogram",
+  render: function () {
+    var values = this.props.data.values();
+    var sum = 0;
+    for (var _iterator = values[Symbol.iterator](), _step; !(_step = _iterator.next()).done;) {
+      var n = _step.value;
+      sum += n;
+    }
+
+    ;
+    return React.createElement("div", null, sum);
   }
 });
 
-React.render(React.createElement(Dashboard, null), document.getElementById('demo'));
+var Dashboard = React.createClass({ displayName: "Dashboard",
+  getInitialState: function () {
+    return { data: new ArrayBuffer(HISTOGRAM_BINS * 4 * 2) };
+  },
+  componentDidMount: function () {
+    var wsc = new ws("ws://localhost:8081");
+    wsc.binaryType = "arraybuffer";
+    wsc.onmessage = (function (message) {
+      this.setState({ data: message.data });
+    }).bind(this);
+  },
+  render: function () {
+    return React.createElement("div", { className: "container" }, React.createElement("div", { className: "row" }, React.createElement("div", { className: "col-xs-12" }, React.createElement("h1", null, "Scalable Data Visualization"), React.createElement("h2", null, "Visualizing the Bitcoin Blockchain"))), React.createElement("div", { className: "row" }, React.createElement("div", { className: "col-md-6" }, React.createElement(Histogram, { data: new Uint32Array(this.state.data, 0) })), React.createElement("div", { className: "col-md-6" }, React.createElement(Histogram, { data: new Uint32Array(this.state.data, HISTOGRAM_BINS * 4) }))));
+  }
+});
+
+React.render(React.createElement(Dashboard, null), document.getElementById("demo"));
 
 },{"react":"/Users/zach/talk_demo/node_modules/react/react.js","ws":"/Users/zach/talk_demo/node_modules/ws/lib/browser.js"}],"/Users/zach/talk_demo/node_modules/browserify/node_modules/process/browser.js":[function(require,module,exports){
 // shim for using process in browser
