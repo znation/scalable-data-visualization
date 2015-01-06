@@ -8,6 +8,7 @@ var browserify = require('browserify');
 var buffer = require('vinyl-buffer');
 var gulp = require('gulp');
 var gutil = require('gulp-util');
+var livereload = require('gulp-livereload');
 var newer = require('gulp-newer');
 var rename = require('gulp-rename');
 var source = require('vinyl-source-stream');
@@ -30,6 +31,7 @@ gulp.task('client', bundle); // so you can run `gulp js` to build the file
 bundler.on('update', bundle); // on any dep update, runs the bundler
 
 gulp.task('watch', function() {
+  livereload.listen();
   gulp.watch('src/client.jsx', ['client']);
   gulp.watch('src/server.js', ['server']);
 });
@@ -49,5 +51,6 @@ function bundle() {
       .pipe(sourcemaps.init({loadMaps: true})) // loads map from browserify file
       .pipe(sourcemaps.write('./')) // writes .map file
     //
-    .pipe(gulp.dest('./bin'));
+    .pipe(gulp.dest('./bin'))
+    .pipe(livereload());
 }
