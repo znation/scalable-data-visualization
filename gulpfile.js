@@ -4,12 +4,16 @@
 var path = require('path');
 
 // external modules
-var watchify = require('gulp-watchify');
+var browserify = require('browserify');
+var buffer = require('vinyl-buffer');
 var gulp = require('gulp');
+var gutil = require('gulp-util');
 var newer = require('gulp-newer');
-var react = require('gulp-react');
 var rename = require('gulp-rename');
+var source = require('vinyl-source-stream');
+var sourcemaps = require('gulp-sourcemaps');
 var to5 = require('gulp-6to5');
+var watchify = require('watchify');
 
 gulp.task('server', function() {
   return gulp.src('src/server.js')
@@ -18,36 +22,15 @@ gulp.task('server', function() {
     .pipe(gulp.dest('bin'));
 });
 
-// Hack to enable configurable watchify watching
-var watching = false;
-gulp.task('enable-watch-mode', function() { watching = true });
+var bundler = watchify(browserify('./src/client.jsx', watchify.args));
+// add any other browserify options or transforms here
+bundler.transform('reactify');
 
-gulp.task('jsx', function() {
-  return gulp.src('src/**/*.jsx')
-    .pipe(newer({
-      dest: 'build',
-      map: function(relativePath) {
-        return path.basename(relativePath, '.jsx') + '.js';
-      }
-    }))
-    .pipe(react())
-    .pipe(rename(function(path) {
-      path.extname = '.js';
-    }))
-    .pipe(gulp.dest('build'));
-});
-
-gulp.task('client', ['jsx'], watchify(function(watchify) {
-  return gulp.src('build/client.js')
-    .pipe(newer('bin'))
-    .pipe(watchify({
-      watch: watching
-    }))
-    .pipe(gulp.dest('bin'));
-}));
+gulp.task('client', bundle); // so you can run `gulp js` to build the file
+bundler.on('update', bundle); // on any dep update, runs the bundler
 
 gulp.task('watch', function() {
-  gulp.watch('src/client.jsx', ['enable-watch-mode', 'client']);
+  gulp.watch('src/client.jsx', ['client']);
   gulp.watch('src/server.js', ['server']);
 });
 
@@ -55,3 +38,16 @@ gulp.task('default', [
   'client',
   'server'
 ], function() {});
+
+function bundle() {
+  return bundler.bundle()
+    // log errors if they happen
+    .on('error', gutil.log.bind(gutil, 'Browserify Error'))
+    .pipe(source('bundle.js'))
+    // optional, remove if you dont want sourcemaps
+      .pipe(buffer())
+      .pipe(sourcemaps.init({loadMaps: true})) // loads map from browserify file
+      .pipe(sourcemaps.write('./')) // writes .map file
+    //
+    .pipe(gulp.dest('./bin'));
+}
