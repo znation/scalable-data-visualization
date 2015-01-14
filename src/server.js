@@ -59,11 +59,10 @@ var process = function(ws) {
               return;
             }
             // make sure size (as reported by contents) matches parsed size
-            /*
             var size = binary.parse(vars.message).word32lu('size').vars.size;
             assert(vars.message.length - size - 4 === 0);
-            */
 
+            // update histogram bins
             bins[findBin(vars.message.length)]++;
 
             // reporting
