@@ -8,6 +8,7 @@ var ws = require("ws");
 
 // internal deps
 var config = require("./config.js");
+var hist = require("./histogram.js");
 
 // utility functions
 function regularArray(typedArray) {
@@ -24,6 +25,8 @@ var Histogram = React.createClass({ displayName: "Histogram",
     // TODO -- figure out how to cleanly map over typed arrays
     // without having to copy to a regular array
     var values = regularArray(this.props.data);
+
+
     var width = 400;
     var height = 300;
     var xScale = d3.scale.linear().domain([0, values.length]).range([0, width]);
@@ -45,27 +48,23 @@ var Histogram = React.createClass({ displayName: "Histogram",
 
 var Dashboard = React.createClass({ displayName: "Dashboard",
   getInitialState: function () {
-    return { data: new ArrayBuffer(config.HISTOGRAM_BYTES * config.NUM_HISTOGRAMS) };
+    return { histogram: hist(config.TOTAL_BYTES) };
   },
   componentDidMount: function () {
     var wsc = new ws("ws://localhost:8081");
     wsc.binaryType = "arraybuffer";
     wsc.onmessage = (function (message) {
-      this.setState({ data: message.data });
+      this.setState({ histogram: hist(message.data) });
     }).bind(this);
   },
   render: function () {
-    return React.createElement("div", { className: "container" }, React.createElement("div", { className: "row" }, React.createElement("div", { className: "col-xs-12" }, React.createElement("h1", null, "Scalable Data Visualization"), React.createElement("h2", null, "Visualizing the Bitcoin Blockchain"))), React.createElement("div", { className: "row" }, React.createElement("div", { className: "col-md-6" }, React.createElement(Histogram, { data: new Uint32Array(this.state.data, 0, config.HISTOGRAM_BINS) })), React.createElement("div", { className: "col-md-6" }
-    /*
-    <Histogram data={new Uint32Array(this.state.data, config.HISTOGRAM_BINS, config.HISTOGRAM_BINS)} />
-    */
-    )));
+    return React.createElement("div", { className: "container" }, React.createElement("div", { className: "row" }, React.createElement("div", { className: "col-xs-12" }, React.createElement("h1", null, "Scalable Data Visualization"), React.createElement("h2", null, "Visualizing the Bitcoin Blockchain"))), React.createElement("div", { className: "row" }, React.createElement("div", { className: "col-md-6" }, React.createElement(Histogram, { data: this.state.histogram.getValues("blockSize") })), React.createElement("div", { className: "col-md-6" }, React.createElement(Histogram, { data: this.state.histogram.getValues("numTransactions") }))));
   }
 });
 
 React.render(React.createElement(Dashboard, null), document.getElementById("demo"));
 
-},{"./config.js":"/Users/zach/talk_demo/src/config.js","d3":"/Users/zach/talk_demo/node_modules/d3/d3.js","react":"/Users/zach/talk_demo/node_modules/react/react.js","ws":"/Users/zach/talk_demo/node_modules/ws/lib/browser.js"}],"/Users/zach/talk_demo/node_modules/browserify/node_modules/process/browser.js":[function(require,module,exports){
+},{"./config.js":"/Users/zach/talk_demo/src/config.js","./histogram.js":"/Users/zach/talk_demo/src/histogram.js","d3":"/Users/zach/talk_demo/node_modules/d3/d3.js","react":"/Users/zach/talk_demo/node_modules/react/react.js","ws":"/Users/zach/talk_demo/node_modules/ws/lib/browser.js"}],"/Users/zach/talk_demo/node_modules/browserify/node_modules/process/browser.js":[function(require,module,exports){
 // shim for using process in browser
 
 var process = module.exports = {};
@@ -27897,13 +27896,76 @@ if (WebSocket) ws.prototype = WebSocket.prototype;
 "use strict";
 
 var bins = 100 * 10; // supports values up to 10^10
+var numHistograms = 2;
+var metadataBytes = 8;
+var histogramBytes = bins * 4;
 
 module.exports = {
-  NUM_HISTOGRAMS: 2,
+  NUM_HISTOGRAMS: numHistograms,
   HISTOGRAM_BINS: bins,
-  HISTOGRAM_BYTES: bins * 4
+  METADATA_BYTES: metadataBytes, // reserve 8 bytes for range (min,max)
+  HISTOGRAM_BYTES: histogramBytes,
+  TOTAL_BYTES: (metadataBytes + histogramBytes) * numHistograms
 };
 
-},{}]},{},["./src/client.jsx"]);
+},{}],"/Users/zach/talk_demo/src/histogram.js":[function(require,module,exports){
+"use strict";
+
+var config = require("./config.js");
+
+function log10(x) {
+  return Math.log(x) / Math.LN10;
+}
+
+function findBin(n) {
+  // "bucket" represents the block of bins
+  // (1-10, 11-100, etc.)
+  var bucket = Math.floor(log10(n));
+  if (bucket > 9) {
+    throw "value out of range: " + n;
+  }
+  // "bin" represents the bin (0-99) within the block
+  var bin = Math.round((n - Math.pow(10, bucket)) / (Math.pow(10, bucket + 1) - Math.pow(10, bucket)) * 100);
+  var ret = Math.pow(10, bucket) + bin;
+  return ret;
+};
+
+module.exports = function (data) {
+  // create views into bins (Uint32 array of HISTOGRAM_BINS length each)
+  return {
+    bins: {
+      blockSize: new Uint32Array(data, config.METADATA_BYTES, config.HISTOGRAM_BINS),
+      numTransactions: new Uint32Array(data, config.METADATA_BYTES * 2 + config.HISTOGRAM_BINS, config.HISTOGRAM_BINS)
+    },
+
+    // create views into extrema (Uint32 array of 8 bytes each)
+    extrema: {
+      blockSize: new Uint32Array(data, 0, config.METADATA_BYTES),
+      numTransactions: new Uint32Array(data, config.METADATA_BYTES + config.HISTOGRAM_BINS, config.METADATA_BYTES)
+    },
+
+    addValue: function (name, value) {
+      this.extrema[name][0] = Math.min(this.extrema[name][0], value);
+      this.extrema[name][1] = Math.max(this.extrema[name][1], value);
+      this.bins[name][findBin(value)]++;
+    },
+
+    /*
+    this.getMin = function(name) {
+      return this.extrema[name][0];
+    };
+     this.getMax = function(name) {
+      return this.extrema[name][1];
+    };
+    */
+
+    getValues: function (name) {
+      // TODO postprocess bins to get values that make sense
+      return this.bins[name];
+    }
+  };
+};
+
+},{"./config.js":"/Users/zach/talk_demo/src/config.js"}]},{},["./src/client.jsx"]);
 
 //# sourceMappingURL=bundle.js.map

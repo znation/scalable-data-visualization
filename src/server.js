@@ -12,29 +12,13 @@ var ws = require('ws');
 // internal deps
 var config = require('./config.js');
 
+// allocate one block of ArrayBuffer for all histograms and extrema
+var data = new ArrayBuffer(config.TOTAL_BYTES);
+var histogram = require('./histogram.js')(data);
+
 // start up ws server
 var WebSocketServer = ws.Server
   , wss = new WebSocketServer({port: 8081});
-
-var data = new ArrayBuffer(config.HISTOGRAM_BYTES * config.NUM_HISTOGRAMS);
-var bins = {
-  'blockSize': new Uint32Array(data, 0, config.HISTOGRAM_BINS),
-  'numTransactions': new Uint32Array(data, config.HISTOGRAM_BINS, config.HISTOGRAM_BINS)
-};
-function log10(x) {
-  return Math.log(x) / Math.LN10;
-}
-var findBin = function(n) {
-  // "bucket" represents the block of bins
-  // (1-10, 11-100, etc.)
-  var bucket = Math.floor(log10(n));
-  if (bucket > 9) {
-    throw 'value out of range: ' + n;
-  }
-  // "bin" represents the bin (0-99) within the block
-  var bin = Math.round(((n - Math.pow(10, bucket)) / (Math.pow(10, bucket+1) - Math.pow(10, bucket))) * 100);
-  return Math.pow(10, bucket) + bin;
-};
 
 var process = function(ws) {
   var closed = false;
@@ -88,8 +72,8 @@ var process = function(ws) {
             }
 
             // update histogram bins
-            bins['blockSize'][findBin(vars.blockSizeWithHeader)]++;
-            bins['numTransactions'][findBin(nTx)]++;
+            histogram.addValue('blockSize', vars.blockSizeWithHeader);
+            histogram.addValue('numTransactions', nTx);
 
             // reporting
             bytesRead += (vars.blockSizeWithHeader + 8); // include header and magic bytes

@@ -7,6 +7,7 @@ var ws = require('ws');
 
 // internal deps
 var config = require('./config.js');
+var hist = require('./histogram.js');
 
 // utility functions
 function regularArray(typedArray) {
@@ -23,6 +24,8 @@ var Histogram = React.createClass({
     // TODO -- figure out how to cleanly map over typed arrays
     // without having to copy to a regular array
     var values = regularArray(this.props.data);
+
+
     var width = 400;
     var height = 300;
     var xScale = d3.scale.linear()
@@ -55,13 +58,13 @@ var Histogram = React.createClass({
 
 var Dashboard = React.createClass({
   getInitialState: function() {
-    return { data: new ArrayBuffer(config.HISTOGRAM_BYTES * config.NUM_HISTOGRAMS) };
+    return { histogram: hist(config.TOTAL_BYTES) };
   },
   componentDidMount: function() {
     var wsc = new ws('ws://localhost:8081');
     wsc.binaryType = 'arraybuffer';
     wsc.onmessage = function(message) {
-      this.setState({data: message.data});
+      this.setState({ histogram: hist(message.data) });
     }.bind(this);
   },
   render: function() {
@@ -75,12 +78,10 @@ var Dashboard = React.createClass({
         </div>
         <div className="row">
           <div className="col-md-6">
-            <Histogram data={new Uint32Array(this.state.data, 0, config.HISTOGRAM_BINS)} />
+            <Histogram data={ this.state.histogram.getValues('blockSize') } />
           </div>
           <div className="col-md-6">
-            {/*
-            <Histogram data={new Uint32Array(this.state.data, config.HISTOGRAM_BINS, config.HISTOGRAM_BINS)} />
-            */}
+            <Histogram data={ this.state.histogram.getValues('numTransactions') } />
           </div>
         </div>
       </div>
