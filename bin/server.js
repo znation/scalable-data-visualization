@@ -9,12 +9,17 @@ var binary = require("binary");
 var staticServer = require("node-static");
 var ws = require("ws");
 
+// internal deps
+var config = require("./config.js");
+
 // start up ws server
 var WebSocketServer = ws.Server, wss = new WebSocketServer({ port: 8081 });
 
-var binCount = 100 * 10; // supports values up to 10^10
-var data = new ArrayBuffer(binCount * 4);
-var bins = new Uint32Array(data, 0);
+var data = new ArrayBuffer(config.HISTOGRAM_BYTES * config.NUM_HISTOGRAMS);
+var bins = {
+  blockSize: new Uint32Array(data, 0, config.HISTOGRAM_BINS),
+  numTransactions: new Uint32Array(data, config.HISTOGRAM_BINS, config.HISTOGRAM_BINS)
+};
 function log10(x) {
   return Math.log(x) / Math.LN10;
 }
@@ -43,7 +48,6 @@ var process = function (ws) {
     // start processing the file
     var totalFileSize = stats.size;
     var stream = fs.createReadStream("bootstrap.dat");
-    var header = new Buffer([249, 190, 180, 217]);
     var bytesRead = 0;
     var previousHundredthPct = 0;
     var b = binary().loop(function (end, vars) {
@@ -51,21 +55,34 @@ var process = function (ws) {
         end();
         return;
       }
-      this.scan("message", header).tap(function (vars) {
-        if (vars.message.length === 0) {
-          // empty message, should only happen on the first one
-          return;
+      this.word8lu("magic1").word8lu("magic2").word8lu("magic3").word8lu("magic4").word32lu("blockSizeWithHeader").buffer("message", "blockSizeWithHeader").tap(function (vars) {
+        // message length is in vars.size
+        assert.equal(vars.magic1, 249);
+        assert.equal(vars.magic2, 190);
+        assert.equal(vars.magic3, 180);
+        assert.equal(vars.magic4, 217);
+        var pieces = binary.parse(vars.message).buffer("header", 80).buffer("nTx_varInt", 9).vars;
+        // parse out VAR_INT as described at
+        // https://en.bitcoin.it/wiki/Protocol_specification#Variable_length_integer
+        var nTx = null;
+        var byte1 = binary.parse(pieces.nTx_varInt).word8lu("byte1").vars.byte1;
+        if (byte1 < 253) {
+          nTx = byte1;
+        } else if (byte1 === 253) {
+          nTx = binary.parse(pieces.nTx_varInt).skip(1).word16lu("nTx").vars.nTx;
+        } else if (byte1 === 254) {
+          nTx = binary.parse(pieces.nTx_varInt).skip(1).word32lu("nTx").vars.nTx;
+        } else {
+          assert.equal(byte1, 255);
+          nTx = binary.parse(pieces.nTx_varInt).skip(1).word64lu("nTx").vars.nTx;
         }
-        // make sure size (as reported by contents) matches parsed size
-        /*
-        var size = binary.parse(vars.message).word32lu('size').vars.size;
-        assert(vars.message.length - size - 4 === 0);
-        */
 
-        bins[findBin(vars.message.length)]++;
+        // update histogram bins
+        bins.blockSize[findBin(vars.blockSizeWithHeader)]++;
+        bins.numTransactions[findBin(nTx)]++;
 
         // reporting
-        bytesRead += vars.message.length + 4; // include header
+        bytesRead += vars.blockSizeWithHeader + 8; // include header and magic bytes
         var hundredthPct = Math.floor(bytesRead / totalFileSize * 10000);
         if (hundredthPct !== previousHundredthPct) {
           ws.send(new Buffer(new Uint8Array(data)));

@@ -17,7 +17,7 @@ var to5 = require('gulp-6to5');
 var watchify = require('watchify');
 
 gulp.task('server', function() {
-  return gulp.src('src/server.js')
+  return gulp.src(['src/server.js', 'src/config.js'])
     .pipe(newer('bin'))
     .pipe(to5())
     .pipe(gulp.dest('bin'));
@@ -33,8 +33,8 @@ bundler.on('update', bundle); // on any dep update, runs the bundler
 
 gulp.task('watch', function() {
   livereload.listen();
-  gulp.watch('src/client.jsx', ['client']);
-  gulp.watch('src/server.js', ['server']);
+  gulp.watch(['src/config.js', 'src/client.jsx'], ['client']);
+  gulp.watch(['src/config.js', 'src/server.js'], ['server']);
 });
 
 gulp.task('default', [

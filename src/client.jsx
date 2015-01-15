@@ -2,30 +2,60 @@
 
 // external deps
 var React = require('react');
+var d3 = require('d3');
 var ws = require('ws');
 
-// constants
-var NUM_HISTOGRAMS = 2;
-var HISTOGRAM_BINS = 1000;
+// internal deps
+var config = require('./config.js');
 
+// utility functions
+function regularArray(typedArray) {
+  var arr = new Array(typedArray.length);
+  for (var i=0; i<typedArray.length; i++) {
+    arr[i] = typedArray[i];
+  }
+  return arr;
+}
+
+// React components
 var Histogram = React.createClass({
   render: function() {
-    var values = this.props.data.values();
-    var sum = 0;
-    for (let n of values) {
-      sum += n;
-    };
+    // TODO -- figure out how to cleanly map over typed arrays
+    // without having to copy to a regular array
+    var values = regularArray(this.props.data);
+    var width = 400;
+    var height = 300;
+    var xScale = d3.scale.linear()
+      .domain([0, values.length])
+      .range([0, width]);
+    var yScale = d3.scale.linear()
+      .domain([d3.min(values), d3.max(values)])
+      .range([0, height]);
     return (
-      <div>
-        {sum}
-      </div>
+      <svg
+        width={width}
+        height={height}
+      >
+        {values.map(function(value, idx) {
+          return (
+            <rect
+              fill='#0a8cc4'
+              x={xScale(idx)}
+              width={width/values.length}
+              y={height - yScale(value)}
+              height={yScale(value)}
+              key={idx}
+            />
+          );
+        }.bind(this))}
+      </svg>
     );
   }
 });
 
 var Dashboard = React.createClass({
   getInitialState: function() {
-    return { data: new ArrayBuffer(HISTOGRAM_BINS * 4 * 2) };
+    return { data: new ArrayBuffer(config.HISTOGRAM_BYTES * config.NUM_HISTOGRAMS) };
   },
   componentDidMount: function() {
     var wsc = new ws('ws://localhost:8081');
@@ -45,10 +75,12 @@ var Dashboard = React.createClass({
         </div>
         <div className="row">
           <div className="col-md-6">
-            <Histogram data={new Uint32Array(this.state.data, 0)} />
+            <Histogram data={new Uint32Array(this.state.data, 0, config.HISTOGRAM_BINS)} />
           </div>
           <div className="col-md-6">
-            <Histogram data={new Uint32Array(this.state.data, HISTOGRAM_BINS * 4)} />
+            {/*
+            <Histogram data={new Uint32Array(this.state.data, config.HISTOGRAM_BINS, config.HISTOGRAM_BINS)} />
+            */}
           </div>
         </div>
       </div>
