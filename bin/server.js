@@ -12,10 +12,6 @@ var ws = require("ws");
 // internal deps
 var config = require("./config.js");
 
-// allocate one block of ArrayBuffer for all histograms and extrema
-var data = new ArrayBuffer(config.TOTAL_BYTES);
-var histogram = require("./histogram.js")(data);
-
 // start up ws server
 var WebSocketServer = ws.Server, wss = new WebSocketServer({ port: 8081 });
 
@@ -25,6 +21,12 @@ var process = function (ws) {
     console.log("disconnected");
     closed = true;
   });
+
+  // allocate one block of ArrayBuffer for all histograms and extrema
+  var data = new ArrayBuffer(config.TOTAL_BYTES);
+  var histogram = require("./histogram.js")(data);
+
+  // read the blockchain
   fs.stat("bootstrap.dat", function (err, stats) {
     if (err) {
       throw err;
@@ -33,7 +35,7 @@ var process = function (ws) {
     var totalFileSize = stats.size;
     var stream = fs.createReadStream("bootstrap.dat");
     var bytesRead = 0;
-    var previousHundredthPct = 0;
+    var previousTenthPct = 0;
     var b = binary().loop(function (end, vars) {
       if (closed) {
         end();
@@ -67,11 +69,11 @@ var process = function (ws) {
 
         // reporting
         bytesRead += vars.blockSizeWithHeader + 8; // include header and magic bytes
-        var hundredthPct = Math.floor(bytesRead / totalFileSize * 10000);
-        if (hundredthPct !== previousHundredthPct) {
+        var tenthPct = Math.floor(bytesRead / totalFileSize * 1000);
+        if (tenthPct !== previousTenthPct) {
           ws.send(new Buffer(new Uint8Array(data)));
-          previousHundredthPct = hundredthPct;
-          console.log(hundredthPct / 100 + "% complete");
+          previousTenthPct = tenthPct;
+          console.log(tenthPct / 10 + "% complete");
         }
       });
     });
