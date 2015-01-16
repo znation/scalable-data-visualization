@@ -1,7 +1,7 @@
 "use strict";
 
 var bins = 100 * 10; // supports values up to 10^10
-var numHistograms = 2;
+var numHistograms = 1;
 var metadataBytes = 8;
 var histogramBytes = bins * 4;
 

@@ -77,11 +77,8 @@ var Dashboard = React.createClass({
           </div>
         </div>
         <div className="row">
-          <div className="col-md-6">
-            <Histogram data={ this.state.histogram.getValues('blockSize') } />
-          </div>
-          <div className="col-md-6">
-            <Histogram data={ this.state.histogram.getValues('numTransactions') } />
+          <div className="col-xs-12">
+            <Histogram data={ this.state.histogram.getValues('txAmount') } />
           </div>
         </div>
       </div>

@@ -20,10 +20,8 @@ function findBin(n) {
 };
 
 function getOffset(name) {
-  if (name === "blockSize") {
+  if (name === "txAmount") {
     return 0;
-  } else if (name === "numTransactions") {
-    return config.METADATA_BYTES + config.HISTOGRAM_BINS * 4;
   }
 };
 
@@ -31,14 +29,12 @@ module.exports = function (data) {
   // create views into bins (Uint32 array of HISTOGRAM_BINS length each)
   return {
     bins: {
-      blockSize: new Uint32Array(data, getOffset("blockSize") + config.METADATA_BYTES, config.HISTOGRAM_BINS),
-      numTransactions: new Uint32Array(data, getOffset("numTransactions") + config.METADATA_BYTES, config.HISTOGRAM_BINS)
+      txAmount: new Uint32Array(data, getOffset("txAmount") + config.METADATA_BYTES, config.HISTOGRAM_BINS)
     },
 
     // create views into extrema (Uint32 array of 8 bytes each)
     extrema: {
-      blockSize: new Uint32Array(data, getOffset("blockSize"), config.METADATA_BYTES / 4),
-      numTransactions: new Uint32Array(data, getOffset("numTransactions"), config.METADATA_BYTES / 4)
+      txAmount: new Uint32Array(data, getOffset("txAmount"), config.METADATA_BYTES / 4)
     },
 
     addValue: function (name, value) {
@@ -46,15 +42,6 @@ module.exports = function (data) {
       this.extrema[name][1] = Math.max(this.extrema[name][1], value);
       this.bins[name][findBin(value)]++;
     },
-
-    /*
-    this.getMin = function(name) {
-      return this.extrema[name][0];
-    };
-     this.getMax = function(name) {
-      return this.extrema[name][1];
-    };
-    */
 
     getValues: function (name) {
       // return only the bins within the largest bucket,

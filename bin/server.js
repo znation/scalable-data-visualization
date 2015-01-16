@@ -6,6 +6,7 @@ var fs = require("fs");
 
 // external deps
 var binary = require("binary");
+var bitcore = require("bitcore");
 var staticServer = require("node-static");
 var ws = require("ws");
 
@@ -25,6 +26,8 @@ var process = function (ws) {
   // allocate one block of ArrayBuffer for all histograms and extrema
   var data = new ArrayBuffer(config.TOTAL_BYTES);
   var histogram = require("./histogram.js")(data);
+
+  var blockIdx = 0;
 
   // read the blockchain
   fs.stat("bootstrap.dat", function (err, stats) {
@@ -47,34 +50,38 @@ var process = function (ws) {
         assert.equal(vars.magic2, 190);
         assert.equal(vars.magic3, 180);
         assert.equal(vars.magic4, 217);
-        var pieces = binary.parse(vars.message).buffer("header", 80).buffer("nTx_varInt", 9).vars;
-        // parse out VAR_INT as described at
-        // https://en.bitcoin.it/wiki/Protocol_specification#Variable_length_integer
-        var nTx = null;
-        var byte1 = binary.parse(pieces.nTx_varInt).word8lu("byte1").vars.byte1;
-        if (byte1 < 253) {
-          nTx = byte1;
-        } else if (byte1 === 253) {
-          nTx = binary.parse(pieces.nTx_varInt).skip(1).word16lu("nTx").vars.nTx;
-        } else if (byte1 === 254) {
-          nTx = binary.parse(pieces.nTx_varInt).skip(1).word32lu("nTx").vars.nTx;
-        } else {
-          assert.equal(byte1, 255);
-          nTx = binary.parse(pieces.nTx_varInt).skip(1).word64lu("nTx").vars.nTx;
-        }
+
+        // parse out a block using bitcore
+        var blockData = new Buffer(8 + vars.blockSizeWithHeader);
+        blockData.writeUInt8(vars.magic1, 0);
+        blockData.writeUInt8(vars.magic2, 1);
+        blockData.writeUInt8(vars.magic3, 2);
+        blockData.writeUInt8(vars.magic4, 3);
+        blockData.writeUInt32LE(vars.blockSizeWithHeader, 4);
+        vars.message.copy(blockData, 8);
+        var block = bitcore.Block.fromBuffer(blockData);
 
         // update histogram bins
-        histogram.addValue("blockSize", vars.blockSizeWithHeader);
-        histogram.addValue("numTransactions", nTx);
+        block.txs.forEach(function (tx) {
+          // get the total tx amount
+          var txAmount = tx.outputs.reduce(function (prev, output) {
+            return output._satoshis.toNumber();
+          }, 0);
+          // convert satoshis into bitcoin
+          txAmount *= 1e-8;
+          histogram.addValue("txAmount", txAmount);
+        });
 
         // reporting
-        bytesRead += vars.blockSizeWithHeader + 8; // include header and magic bytes
+        bytesRead += block.size + 8; // include header and magic bytes
         var tenthPct = Math.floor(bytesRead / totalFileSize * 1000);
         if (tenthPct !== previousTenthPct) {
           ws.send(new Buffer(new Uint8Array(data)));
           previousTenthPct = tenthPct;
           console.log(tenthPct / 10 + "% complete");
         }
+
+        blockIdx++;
       });
     });
     stream.pipe(b);

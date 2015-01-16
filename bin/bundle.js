@@ -58,7 +58,7 @@ var Dashboard = React.createClass({ displayName: "Dashboard",
     }).bind(this);
   },
   render: function () {
-    return React.createElement("div", { className: "container" }, React.createElement("div", { className: "row" }, React.createElement("div", { className: "col-xs-12" }, React.createElement("h1", null, "Scalable Data Visualization"), React.createElement("h2", null, "Visualizing the Bitcoin Blockchain"))), React.createElement("div", { className: "row" }, React.createElement("div", { className: "col-md-6" }, React.createElement(Histogram, { data: this.state.histogram.getValues("blockSize") })), React.createElement("div", { className: "col-md-6" }, React.createElement(Histogram, { data: this.state.histogram.getValues("numTransactions") }))));
+    return React.createElement("div", { className: "container" }, React.createElement("div", { className: "row" }, React.createElement("div", { className: "col-xs-12" }, React.createElement("h1", null, "Scalable Data Visualization"), React.createElement("h2", null, "Visualizing the Bitcoin Blockchain"))), React.createElement("div", { className: "row" }, React.createElement("div", { className: "col-xs-12" }, React.createElement(Histogram, { data: this.state.histogram.getValues("txAmount") }))));
   }
 });
 
@@ -27896,7 +27896,7 @@ if (WebSocket) ws.prototype = WebSocket.prototype;
 "use strict";
 
 var bins = 100 * 10; // supports values up to 10^10
-var numHistograms = 2;
+var numHistograms = 1;
 var metadataBytes = 8;
 var histogramBytes = bins * 4;
 
@@ -27926,15 +27926,13 @@ function findBin(n) {
   }
   // "bin" represents the bin (0-99) within the block
   var bin = Math.round((n - Math.pow(10, bucket)) / (Math.pow(10, bucket + 1) - Math.pow(10, bucket)) * 100);
-  var ret = Math.pow(10, bucket) + bin;
+  var ret = 100 * bucket + bin;
   return ret;
 };
 
 function getOffset(name) {
-  if (name === "blockSize") {
+  if (name === "txAmount") {
     return 0;
-  } else if (name === "numTransactions") {
-    return config.METADATA_BYTES + config.HISTOGRAM_BINS * 4;
   }
 };
 
@@ -27942,14 +27940,12 @@ module.exports = function (data) {
   // create views into bins (Uint32 array of HISTOGRAM_BINS length each)
   return {
     bins: {
-      blockSize: new Uint32Array(data, getOffset("blockSize") + config.METADATA_BYTES, config.HISTOGRAM_BINS),
-      numTransactions: new Uint32Array(data, getOffset("numTransactions") + config.METADATA_BYTES, config.HISTOGRAM_BINS)
+      txAmount: new Uint32Array(data, getOffset("txAmount") + config.METADATA_BYTES, config.HISTOGRAM_BINS)
     },
 
     // create views into extrema (Uint32 array of 8 bytes each)
     extrema: {
-      blockSize: new Uint32Array(data, getOffset("blockSize"), config.METADATA_BYTES / 4),
-      numTransactions: new Uint32Array(data, getOffset("numTransactions"), config.METADATA_BYTES / 4)
+      txAmount: new Uint32Array(data, getOffset("txAmount"), config.METADATA_BYTES / 4)
     },
 
     addValue: function (name, value) {
@@ -27957,15 +27953,6 @@ module.exports = function (data) {
       this.extrema[name][1] = Math.max(this.extrema[name][1], value);
       this.bins[name][findBin(value)]++;
     },
-
-    /*
-    this.getMin = function(name) {
-      return this.extrema[name][0];
-    };
-     this.getMax = function(name) {
-      return this.extrema[name][1];
-    };
-    */
 
     getValues: function (name) {
       // return only the bins within the largest bucket,
