@@ -18,6 +18,9 @@ function regularArray(typedArray) {
   }
   return arr;
 }
+function translate(x, y) {
+  return "translate(" + x + "px," + y + "px)";
+}
 
 // React components
 var Histogram = React.createClass({ displayName: "Histogram",
@@ -48,16 +51,16 @@ var Histogram = React.createClass({ displayName: "Histogram",
     var data = this.props.data.formatHistogram(this.props.name, this.state.bucketOffset);
     var values = regularArray(data.values);
 
-    var width = 101;
-    var height = 25;
+    var width = 606;
+    var height = Math.floor(width / 4);
     var xScale = d3.scale.linear().domain([0, values.length]).range([0, width]);
     var yScale = d3.scale.linear().domain([d3.min(values), d3.max(values)]).range([0, height]);
     return React.createElement("div", { className: "histogram", onMouseDown: this.preventDefault }, React.createElement("div", { className: "zoomControls" }, "Viewing at 10^", data.bucket, " scale.", this.state.bucketOffset === 0 ? null : React.createElement("a", {
       className: "btn btn-default",
       onClick: this.zoomOut
     }, "Zoom Out")), React.createElement("svg", {
-      width: "100%",
-      viewBox: "0 0 " + [width, height].join(" ")
+      width: width,
+      height: height
     }, values.map((function (value, idx) {
       var click = null;
       if (data.bucket !== 0 && idx === 0) {
@@ -66,13 +69,14 @@ var Histogram = React.createClass({ displayName: "Histogram",
       }
       return React.createElement("rect", {
         fill: "#0a8cc4",
-        x: xScale(idx),
-        width: width / values.length,
-        y: height - yScale(value),
-        height: yScale(value),
         key: idx,
+        x: 0,
+        y: 0,
+        width: width / values.length,
+        height: yScale(value),
         style: {
-          cursor: click === null ? "auto" : "pointer"
+          cursor: click === null ? "auto" : "pointer",
+          transform: translate(xScale(idx), height - yScale(value))
         },
         onClick: click });
     }).bind(this))));

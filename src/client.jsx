@@ -17,6 +17,9 @@ function regularArray(typedArray) {
   }
   return arr;
 }
+function translate(x, y) {
+  return 'translate(' + x + 'px,' + y + 'px)';
+}
 
 // React components
 var Histogram = React.createClass({
@@ -47,8 +50,8 @@ var Histogram = React.createClass({
     var data = this.props.data.formatHistogram(this.props.name, this.state.bucketOffset);
     var values = regularArray(data.values);
 
-    var width = 101;
-    var height = 25;
+    var width = 606;
+    var height = Math.floor(width/4);
     var xScale = d3.scale.linear()
       .domain([0, values.length])
       .range([0, width]);
@@ -69,8 +72,8 @@ var Histogram = React.createClass({
           )}
         </div>
         <svg
-          width='100%'
-          viewBox={'0 0 ' + [width, height].join(' ')}
+          width={width}
+          height={height}
         >
           {values.map(function(value, idx) {
             var click = null;
@@ -82,13 +85,14 @@ var Histogram = React.createClass({
             return (
               <rect
                 fill='#0a8cc4'
-                x={xScale(idx)}
-                width={width/values.length}
-                y={height - yScale(value)}
-                height={yScale(value)}
                 key={idx}
+                x={0}
+                y={0}
+                width={width/values.length}
+                height={yScale(value)}
                 style={{
-                  cursor: click === null ? 'auto' : 'pointer'
+                  cursor: click === null ? 'auto' : 'pointer',
+                  transform: translate(xScale(idx), height - yScale(value))
                 }}
                 onClick={click}
               />
