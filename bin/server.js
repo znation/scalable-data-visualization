@@ -21,6 +21,8 @@ var data = new ArrayBuffer(config.TOTAL_BYTES);
 var histogram = require("./histogram.js").histogram(data);
 
 var blockIdx = 0; // current block
+var skipBlocks = 0; // # of blocks to skip (sampling)
+var bytesRead = 0;
 
 var process = function (ws) {
   var closed = false;
@@ -32,10 +34,6 @@ var process = function (ws) {
   // report first (resume for reset client)
   ws.send(new Buffer(new Uint8Array(data)));
 
-  // # of blocks to skip (sampling)
-  // start at blockIdx to resume when client resets
-  var skipBlocks = blockIdx;
-  blockIdx = 0;
 
   // read the blockchain
   fs.stat("bootstrap.dat", function (err, stats) {
@@ -44,8 +42,9 @@ var process = function (ws) {
     }
     // start processing the file
     var totalFileSize = stats.size;
-    var stream = fs.createReadStream("bootstrap.dat");
-    var bytesRead = 0;
+    var stream = fs.createReadStream("bootstrap.dat", {
+      start: bytesRead // start at bytesRead to resume when client resets
+    });
     var previousHundredthPct = 0;
     var b = binary().loop(function (end, vars) {
       if (closed) {
@@ -85,7 +84,6 @@ var process = function (ws) {
           });
 
           // reporting
-          bytesRead += block.size + 8; // include header and magic bytes
           var hundredthPct = Math.floor(bytesRead / totalFileSize * 10000);
           if (hundredthPct !== previousHundredthPct) {
             ws.send(new Buffer(new Uint8Array(data)));
@@ -96,6 +94,7 @@ var process = function (ws) {
           skipBlocks--;
         }
 
+        bytesRead += vars.blockSizeWithHeader + 8; // include header and magic bytes
         blockIdx++;
       });
     });
