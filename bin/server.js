@@ -18,7 +18,7 @@ var WebSocketServer = ws.Server, wss = new WebSocketServer({ port: 8081 });
 
 // allocate one block of ArrayBuffer for all histograms and extrema
 var data = new ArrayBuffer(config.TOTAL_BYTES);
-var histogram = require("./histogram.js")(data);
+var histogram = require("./histogram.js").histogram(data);
 
 var blockIdx = 0; // current block
 

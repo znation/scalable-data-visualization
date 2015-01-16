@@ -7,7 +7,7 @@ var ws = require('ws');
 
 // internal deps
 var config = require('./config.js');
-var hist = require('./histogram.js');
+var hist = require('./histogram.js').histogram;
 
 // utility functions
 function regularArray(typedArray) {
