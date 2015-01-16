@@ -8,15 +8,21 @@ function log10(x) {
 
 function findBin(n) {
   // "bucket" represents the block of bins
-  // (1-10, 11-100, etc.)
-  var bucket = Math.floor(log10(n));
+  // (0.01 - 0.1, 0.1-1, 1-10, 11-100, etc.)
+  // SMALLEST_VALUE represents the magnitude of the first bucket
+  // each bucket represents one power of ten
+  var bucket = Math.floor(log10(n / config.SMALLEST_VALUE));
+  if (bucket < 0) {
+    // values smaller than SMALLEST_VALUE go into a special 0 bin
+    return 0;
+  }
   if (bucket > 9) {
     throw "value out of range: " + n;
   }
   // "bin" represents the bin (0-99) within the block
-  var bin = Math.round((n - Math.pow(10, bucket)) / (Math.pow(10, bucket + 1) - Math.pow(10, bucket)) * 100);
+  var bin = Math.floor((n - Math.pow(10, bucket - 2)) / (Math.pow(10, bucket - 1) - Math.pow(10, bucket - 2)) * 100);
   var ret = 100 * bucket + bin;
-  return ret;
+  return ret + 1; // account for the "0" bin (values smaller than SMALLEST_VALUE)
 };
 
 function getOffset(name) {
@@ -43,24 +49,39 @@ module.exports = function (data) {
       this.bins[name][findBin(value)]++;
     },
 
-    getValues: function (name) {
+    findBucket: function (name) {
+      var maxValue = this.extrema[name][1];
+      if (maxValue === 0) {
+        // special case: extrema==0 means no data (or all zeros)
+        return 0;
+      }
+      return Math.floor(log10(maxValue));
+    },
+
+    formatHistogram: function (name, bucketOffset) {
       // return only the bins within the largest bucket,
       // collapsing all smaller buckets into the 1st element of the largest one
-      var bucket = Math.floor(log10(this.extrema[name][1]));
+      var bucket = this.findBucket(name);
       if (bucket === 0) {
         // special case, just return the first bucket
         return new Uint32Array(data, getOffset(name) + config.METADATA_BYTES, config.HISTOGRAM_BINS);
       }
+      if (bucketOffset !== undefined) {
+        bucket -= bucketOffset;
+      }
       var allValuesBelowBucket = d3.sum(new Uint32Array(data, getOffset(name) + config.METADATA_BYTES, bucket * 100));
       // produce a new array of 101 values
       var newBuf = new ArrayBuffer(101 * 4);
-      var bucketData = new Uint32Array(data, getOffset(name) + config.METADATA_BYTES + 400 * bucket, 100);
+      var bucketData = new Uint32Array(data, getOffset(name) + config.METADATA_BYTES + config.HISTOGRAM_BINS * (bucket / config.NUM_BUCKETS), 100);
       var ret = new Uint32Array(newBuf);
       ret[0] = allValuesBelowBucket;
       for (var i = 0; i < 100; i++) {
         ret[i + 1] = bucketData[i];
       }
-      return ret;
+      return {
+        values: ret,
+        bucket: bucket
+      };
     }
   };
 };

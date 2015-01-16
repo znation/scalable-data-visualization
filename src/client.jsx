@@ -20,14 +20,35 @@ function regularArray(typedArray) {
 
 // React components
 var Histogram = React.createClass({
+  /* component functions */
+  zoom: function(amt) {
+    this.setState({ bucketOffset: this.state.bucketOffset + amt });
+  },
+  /* event handlers */
+  preventDefault: function(evt) {
+    // used on component to prevent text selection via double-click
+    evt.preventDefault();
+  },
+  zoomIn: function(evt) {
+    evt.stopPropagation();
+    this.zoom(1);
+  },
+  zoomOut: function(evt) {
+    evt.stopPropagation();
+    this.zoom(-1);
+  },
+  /* react lifecycle methods */
+  getInitialState: function() {
+    return { bucketOffset: 0 };
+  },
   render: function() {
     // TODO -- figure out how to cleanly map over typed arrays
     // without having to copy to a regular array
-    var values = regularArray(this.props.data);
+    var data = this.props.data.formatHistogram(this.props.name, this.state.bucketOffset);
+    var values = regularArray(data.values);
 
-
-    var width = 400;
-    var height = 300;
+    var width = 101;
+    var height = 25;
     var xScale = d3.scale.linear()
       .domain([0, values.length])
       .range([0, width]);
@@ -35,23 +56,46 @@ var Histogram = React.createClass({
       .domain([d3.min(values), d3.max(values)])
       .range([0, height]);
     return (
-      <svg
-        width={width}
-        height={height}
-      >
-        {values.map(function(value, idx) {
-          return (
-            <rect
-              fill='#0a8cc4'
-              x={xScale(idx)}
-              width={width/values.length}
-              y={height - yScale(value)}
-              height={yScale(value)}
-              key={idx}
-            />
-          );
-        }.bind(this))}
-      </svg>
+      <div className="histogram" onMouseDown={this.preventDefault}>
+        <div className="zoomControls">
+          Viewing at 10^{data.bucket} scale.
+          {this.state.bucketOffset === 0 ? null : (
+            <a
+              className="btn btn-default"
+              onClick={this.zoomOut}
+            >
+              Zoom Out
+            </a>
+          )}
+        </div>
+        <svg
+          width='100%'
+          viewBox={'0 0 ' + [width, height].join(' ')}
+        >
+          {values.map(function(value, idx) {
+            var click = null;
+            if (data.bucket !== 0 &&
+                idx === 0) {
+              // make the first bar clickable, to dive into the results there
+              click = this.zoomIn;
+            }
+            return (
+              <rect
+                fill='#0a8cc4'
+                x={xScale(idx)}
+                width={width/values.length}
+                y={height - yScale(value)}
+                height={yScale(value)}
+                key={idx}
+                style={{
+                  cursor: click === null ? 'auto' : 'pointer'
+                }}
+                onClick={click}
+              />
+            );
+          }.bind(this))}
+        </svg>
+      </div>
     );
   }
 });
@@ -78,7 +122,7 @@ var Dashboard = React.createClass({
         </div>
         <div className="row">
           <div className="col-xs-12">
-            <Histogram data={ this.state.histogram.getValues('txAmount') } />
+            <Histogram data={ this.state.histogram } name="txAmount" />
           </div>
         </div>
       </div>

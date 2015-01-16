@@ -21,28 +21,61 @@ function regularArray(typedArray) {
 
 // React components
 var Histogram = React.createClass({ displayName: "Histogram",
+  /* component functions */
+  zoom: function (amt) {
+    this.setState({ bucketOffset: this.state.bucketOffset + amt });
+  },
+  /* event handlers */
+  preventDefault: function (evt) {
+    // used on component to prevent text selection via double-click
+    evt.preventDefault();
+  },
+  zoomIn: function (evt) {
+    evt.stopPropagation();
+    this.zoom(1);
+  },
+  zoomOut: function (evt) {
+    evt.stopPropagation();
+    this.zoom(-1);
+  },
+  /* react lifecycle methods */
+  getInitialState: function () {
+    return { bucketOffset: 0 };
+  },
   render: function () {
     // TODO -- figure out how to cleanly map over typed arrays
     // without having to copy to a regular array
-    var values = regularArray(this.props.data);
+    var data = this.props.data.formatHistogram(this.props.name, this.state.bucketOffset);
+    var values = regularArray(data.values);
 
-
-    var width = 400;
-    var height = 300;
+    var width = 101;
+    var height = 25;
     var xScale = d3.scale.linear().domain([0, values.length]).range([0, width]);
     var yScale = d3.scale.linear().domain([d3.min(values), d3.max(values)]).range([0, height]);
-    return React.createElement("svg", {
-      width: width,
-      height: height
+    return React.createElement("div", { className: "histogram", onMouseDown: this.preventDefault }, React.createElement("div", { className: "zoomControls" }, "Viewing at 10^", data.bucket, " scale.", this.state.bucketOffset === 0 ? null : React.createElement("a", {
+      className: "btn btn-default",
+      onClick: this.zoomOut
+    }, "Zoom Out")), React.createElement("svg", {
+      width: "100%",
+      viewBox: "0 0 " + [width, height].join(" ")
     }, values.map((function (value, idx) {
+      var click = null;
+      if (data.bucket !== 0 && idx === 0) {
+        // make the first bar clickable, to dive into the results there
+        click = this.zoomIn;
+      }
       return React.createElement("rect", {
         fill: "#0a8cc4",
         x: xScale(idx),
         width: width / values.length,
         y: height - yScale(value),
         height: yScale(value),
-        key: idx });
-    }).bind(this)));
+        key: idx,
+        style: {
+          cursor: click === null ? "auto" : "pointer"
+        },
+        onClick: click });
+    }).bind(this))));
   }
 });
 
@@ -58,7 +91,7 @@ var Dashboard = React.createClass({ displayName: "Dashboard",
     }).bind(this);
   },
   render: function () {
-    return React.createElement("div", { className: "container" }, React.createElement("div", { className: "row" }, React.createElement("div", { className: "col-xs-12" }, React.createElement("h1", null, "Scalable Data Visualization"), React.createElement("h2", null, "Visualizing the Bitcoin Blockchain"))), React.createElement("div", { className: "row" }, React.createElement("div", { className: "col-xs-12" }, React.createElement(Histogram, { data: this.state.histogram.getValues("txAmount") }))));
+    return React.createElement("div", { className: "container" }, React.createElement("div", { className: "row" }, React.createElement("div", { className: "col-xs-12" }, React.createElement("h1", null, "Scalable Data Visualization"), React.createElement("h2", null, "Visualizing the Bitcoin Blockchain"))), React.createElement("div", { className: "row" }, React.createElement("div", { className: "col-xs-12" }, React.createElement(Histogram, { data: this.state.histogram, name: "txAmount" }))));
   }
 });
 
@@ -27895,17 +27928,20 @@ if (WebSocket) ws.prototype = WebSocket.prototype;
 },{}],"/Users/zach/talk_demo/src/config.js":[function(require,module,exports){
 "use strict";
 
-var bins = 100 * 10; // supports values up to 10^10
+var numBuckets = 10;
+var bins = 100 * numBuckets + 1; // supports values up to 10^10
 var numHistograms = 1;
 var metadataBytes = 8;
 var histogramBytes = bins * 4;
 
 module.exports = {
+  SMALLEST_VALUE: 0.01,
   NUM_HISTOGRAMS: numHistograms,
   HISTOGRAM_BINS: bins,
   METADATA_BYTES: metadataBytes, // reserve 8 bytes for range (min,max)
   HISTOGRAM_BYTES: histogramBytes,
-  TOTAL_BYTES: (metadataBytes + histogramBytes) * numHistograms
+  TOTAL_BYTES: (metadataBytes + histogramBytes) * numHistograms,
+  NUM_BUCKETS: numBuckets
 };
 
 },{}],"/Users/zach/talk_demo/src/histogram.js":[function(require,module,exports){
@@ -27919,15 +27955,21 @@ function log10(x) {
 
 function findBin(n) {
   // "bucket" represents the block of bins
-  // (1-10, 11-100, etc.)
-  var bucket = Math.floor(log10(n));
+  // (0.01 - 0.1, 0.1-1, 1-10, 11-100, etc.)
+  // SMALLEST_VALUE represents the magnitude of the first bucket
+  // each bucket represents one power of ten
+  var bucket = Math.floor(log10(n / config.SMALLEST_VALUE));
+  if (bucket < 0) {
+    // values smaller than SMALLEST_VALUE go into a special 0 bin
+    return 0;
+  }
   if (bucket > 9) {
     throw "value out of range: " + n;
   }
   // "bin" represents the bin (0-99) within the block
-  var bin = Math.round((n - Math.pow(10, bucket)) / (Math.pow(10, bucket + 1) - Math.pow(10, bucket)) * 100);
+  var bin = Math.floor((n - Math.pow(10, bucket - 2)) / (Math.pow(10, bucket - 1) - Math.pow(10, bucket - 2)) * 100);
   var ret = 100 * bucket + bin;
-  return ret;
+  return ret + 1; // account for the "0" bin (values smaller than SMALLEST_VALUE)
 };
 
 function getOffset(name) {
@@ -27954,24 +27996,39 @@ module.exports = function (data) {
       this.bins[name][findBin(value)]++;
     },
 
-    getValues: function (name) {
+    findBucket: function (name) {
+      var maxValue = this.extrema[name][1];
+      if (maxValue === 0) {
+        // special case: extrema==0 means no data (or all zeros)
+        return 0;
+      }
+      return Math.floor(log10(maxValue));
+    },
+
+    formatHistogram: function (name, bucketOffset) {
       // return only the bins within the largest bucket,
       // collapsing all smaller buckets into the 1st element of the largest one
-      var bucket = Math.floor(log10(this.extrema[name][1]));
+      var bucket = this.findBucket(name);
       if (bucket === 0) {
         // special case, just return the first bucket
         return new Uint32Array(data, getOffset(name) + config.METADATA_BYTES, config.HISTOGRAM_BINS);
       }
+      if (bucketOffset !== undefined) {
+        bucket -= bucketOffset;
+      }
       var allValuesBelowBucket = d3.sum(new Uint32Array(data, getOffset(name) + config.METADATA_BYTES, bucket * 100));
       // produce a new array of 101 values
       var newBuf = new ArrayBuffer(101 * 4);
-      var bucketData = new Uint32Array(data, getOffset(name) + config.METADATA_BYTES + 400 * bucket, 100);
+      var bucketData = new Uint32Array(data, getOffset(name) + config.METADATA_BYTES + config.HISTOGRAM_BINS * (bucket / config.NUM_BUCKETS), 100);
       var ret = new Uint32Array(newBuf);
       ret[0] = allValuesBelowBucket;
       for (var i = 0; i < 100; i++) {
         ret[i + 1] = bucketData[i];
       }
-      return ret;
+      return {
+        values: ret,
+        bucket: bucket
+      };
     }
   };
 };

@@ -17,6 +17,12 @@ var config = require('./config.js');
 var WebSocketServer = ws.Server
   , wss = new WebSocketServer({port: 8081});
 
+// allocate one block of ArrayBuffer for all histograms and extrema
+var data = new ArrayBuffer(config.TOTAL_BYTES);
+var histogram = require('./histogram.js')(data);
+
+var blockIdx = 0; // current block
+
 var process = function(ws) {
   var closed = false;
   ws.on('close', function() {
@@ -24,11 +30,13 @@ var process = function(ws) {
     closed = true;
   });
 
-  // allocate one block of ArrayBuffer for all histograms and extrema
-  var data = new ArrayBuffer(config.TOTAL_BYTES);
-  var histogram = require('./histogram.js')(data);
+  // report first (resume for reset client)
+  ws.send(new Buffer(new Uint8Array(data)));
 
-  var blockIdx = 0;
+  // # of blocks to skip (sampling)
+  // start at blockIdx to resume when client resets
+  var skipBlocks = blockIdx;
+  blockIdx = 0;
 
   // read the blockchain
   fs.stat('bootstrap.dat', function(err, stats) {
@@ -37,7 +45,7 @@ var process = function(ws) {
     var totalFileSize = stats.size;
     var stream = fs.createReadStream('bootstrap.dat');
     var bytesRead = 0;
-    var previousTenthPct = 0;
+    var previousHundredthPct = 0;
     var b = binary()
       .loop(function(end, vars) {
         if (closed) {
@@ -58,34 +66,41 @@ var process = function(ws) {
             assert.equal(vars.magic3, 0xb4);
             assert.equal(vars.magic4, 0xd9);
 
-            // parse out a block using bitcore
-            var blockData = new Buffer(8 + vars.blockSizeWithHeader);
-            blockData.writeUInt8(vars.magic1, 0);
-            blockData.writeUInt8(vars.magic2, 1);
-            blockData.writeUInt8(vars.magic3, 2);
-            blockData.writeUInt8(vars.magic4, 3);
-            blockData.writeUInt32LE(vars.blockSizeWithHeader, 4);
-            vars.message.copy(blockData, 8);
-            var block = bitcore.Block.fromBuffer(blockData);
+            if (skipBlocks === 0) {
+              // reset skipBlocks -- skip between 0 and 99 blocks
+              skipBlocks = Math.floor(Math.random() * 100);
 
-            // update histogram bins
-            block.txs.forEach(function(tx) {
-              // get the total tx amount
-              var txAmount = tx.outputs.reduce(function(prev, output) {
-                return output._satoshis.toNumber();
-              }, 0);
-              // convert satoshis into bitcoin
-              txAmount *= 0.00000001;
-              histogram.addValue('txAmount', txAmount);
-            });
+              // parse out a block using bitcore
+              var blockData = new Buffer(8 + vars.blockSizeWithHeader);
+              blockData.writeUInt8(vars.magic1, 0);
+              blockData.writeUInt8(vars.magic2, 1);
+              blockData.writeUInt8(vars.magic3, 2);
+              blockData.writeUInt8(vars.magic4, 3);
+              blockData.writeUInt32LE(vars.blockSizeWithHeader, 4);
+              vars.message.copy(blockData, 8);
+              var block = bitcore.Block.fromBuffer(blockData);
 
-            // reporting
-            bytesRead += (block.size + 8); // include header and magic bytes
-            var tenthPct = Math.floor((bytesRead / totalFileSize) * 1000);
-            if (tenthPct !== previousTenthPct) {
-              ws.send(new Buffer(new Uint8Array(data)));
-              previousTenthPct = tenthPct;
-              console.log((tenthPct / 10) + '% complete');
+              // update histogram bins
+              block.txs.forEach(function(tx) {
+                // get the total tx amount
+                var txAmount = tx.outputs.reduce(function(prev, output) {
+                  return output._satoshis.toNumber();
+                }, 0);
+                // convert satoshis into bitcoin
+                txAmount *= 0.00000001;
+                histogram.addValue('txAmount', txAmount);
+              });
+
+              // reporting
+              bytesRead += (block.size + 8); // include header and magic bytes
+              var hundredthPct = Math.floor((bytesRead / totalFileSize) * 10000);
+              if (hundredthPct !== previousHundredthPct) {
+                ws.send(new Buffer(new Uint8Array(data)));
+                previousHundredthPct = hundredthPct;
+                console.log((hundredthPct / 100) + '% complete');
+              }
+            } else {
+              skipBlocks--;
             }
 
             blockIdx++;

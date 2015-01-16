@@ -8,6 +8,7 @@ var browserify = require('browserify');
 var buffer = require('vinyl-buffer');
 var gulp = require('gulp');
 var gutil = require('gulp-util');
+var less = require('gulp-less');
 var livereload = require('gulp-livereload');
 var newer = require('gulp-newer');
 var rename = require('gulp-rename');
@@ -31,15 +32,23 @@ bundler.transform('6to5ify');
 gulp.task('client', bundle); // so you can run `gulp js` to build the file
 bundler.on('update', bundle); // on any dep update, runs the bundler
 
+gulp.task('less', function() {
+  gulp.src('src/*.less')
+    .pipe(less())
+    .pipe(gulp.dest('bin'));
+});
+
 gulp.task('watch', function() {
   livereload.listen();
   gulp.watch(['src/config.js', 'src/histogram.js', 'src/client.jsx'], ['client']);
   gulp.watch(['src/config.js', 'src/histogram.js', 'src/server.js'], ['server']);
+  gulp.watch('src/*.less', ['less']);
 });
 
 gulp.task('default', [
   'client',
-  'server'
+  'server',
+  'less'
 ], function() {});
 
 function bundle() {
