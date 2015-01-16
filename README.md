@@ -1,5 +1,5 @@
 # Scalable Data Visualization
-React.js Conference 2015 talk and demo
+React.js Conference 2015 talk and demo.
 
 This is the demo code repository for the React.js Conf 2015 talk, [Scalable Data Visualization](http://conf.reactjs.com/schedule.html#scalable-data-visualization).
 
