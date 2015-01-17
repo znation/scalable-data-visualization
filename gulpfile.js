@@ -18,7 +18,7 @@ var to5 = require('gulp-6to5');
 var watchify = require('watchify');
 
 gulp.task('server', function() {
-  return gulp.src(['src/server.js', 'src/config.js', 'src/histogram.js'])
+  return gulp.src(['src/*.js'])
     .pipe(newer('bin'))
     .pipe(to5())
     .pipe(gulp.dest('bin'));
@@ -40,8 +40,8 @@ gulp.task('less', function() {
 
 gulp.task('watch', function() {
   livereload.listen();
-  gulp.watch(['src/config.js', 'src/histogram.js', 'src/client.jsx'], ['client']);
-  gulp.watch(['src/config.js', 'src/histogram.js', 'src/server.js'], ['server']);
+  gulp.watch(['src/*.js', 'src/*.jsx'], ['client']);
+  gulp.watch('src/*.js', ['server']);
   gulp.watch('src/*.less', ['less']);
 });
 

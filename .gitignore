@@ -1,3 +1,5 @@
 bootstrap.dat
 build/
 node_modules/
+python/venv/
+python/.ipynb_checkpoints/
