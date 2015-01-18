@@ -18,7 +18,10 @@ module.exports = {
   close: function () {
     closed = true;
   },
-  read: function (cb) {
+  read: function (cb, sampleRate) {
+    if (sampleRate === undefined) {
+      sampleRate = 0.01; // default to 1% sample
+    }
     closed = false;
     // read the blockchain
     fs.stat("bootstrap.dat", function (err, stats) {
@@ -30,7 +33,6 @@ module.exports = {
       var stream = fs.createReadStream("bootstrap.dat", {
         start: bytesRead // start at bytesRead to resume when client resets
       });
-      var previousHundredthPct = 0;
       var b = binary().loop(function (end, vars) {
         if (closed) {
           end();
@@ -45,9 +47,10 @@ module.exports = {
           // message length is in vars.blockSizeWithHeader
           bytesRead += vars.blockSizeWithHeader + 8; // include header and magic bytes
 
-          if (skipBlocks === 0) {
-            // reset skipBlocks -- skip between 0 and 99 blocks
-            skipBlocks = Math.floor(Math.random() * 100);
+          if (skipBlocks === 0 || sampleRate >= 1) {
+            if (sampleRate < 1) {
+              skipBlocks = Math.floor(Math.random() * (2 / sampleRate));
+            }
 
             // parse out a block using bitcore
             var blockData = new Buffer(8 + vars.blockSizeWithHeader);
@@ -61,7 +64,7 @@ module.exports = {
 
             // update histogram bins
             cb(block, bytesRead, totalFileSize);
-          } else {
+          } else if (sampleRate < 1) {
             skipBlocks--;
           }
 
