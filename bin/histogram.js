@@ -66,15 +66,15 @@ module.exports = {
         var bucket = this.findBucket(name);
         if (bucket === 0) {
           // special case, just return the first bucket
-          return new Uint32Array(data, getOffset(name) + config.METADATA_BYTES, config.HISTOGRAM_BINS);
+          return new Uint32Array(data, getOffset(name) + config.METADATA_BYTES, config.BINS_PER_BUCKET + 1);
         }
         if (bucketOffset !== undefined) {
           bucket -= bucketOffset;
         }
-        var allValuesBelowBucket = d3.sum(new Uint32Array(data, getOffset(name) + config.METADATA_BYTES, bucket * config.BINS_PER_BUCKET));
+        var allValuesBelowBucket = d3.sum(new Uint32Array(data, getOffset(name) + config.METADATA_BYTES, bucket * config.BINS_PER_BUCKET + 1));
         // produce a new array of config.BINS_PER_BUCKET+1 values
         var newBuf = new ArrayBuffer((config.BINS_PER_BUCKET + 1) * 4);
-        var bucketData = new Uint32Array(data, getOffset(name) + config.METADATA_BYTES + config.HISTOGRAM_BINS * (bucket / config.NUM_BUCKETS), config.BINS_PER_BUCKET);
+        var bucketData = new Uint32Array(data, getOffset(name) + config.METADATA_BYTES + (config.HISTOGRAM_BINS - 1) * 4 * (bucket / config.NUM_BUCKETS) + 4, config.BINS_PER_BUCKET);
         var ret = new Uint32Array(newBuf);
         ret[0] = allValuesBelowBucket;
         for (var i = 0; i < config.BINS_PER_BUCKET; i++) {

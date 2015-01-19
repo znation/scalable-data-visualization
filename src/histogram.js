@@ -77,7 +77,7 @@ module.exports = {
           return new Uint32Array(
             data,
             getOffset(name) + config.METADATA_BYTES,
-            config.HISTOGRAM_BINS
+            config.BINS_PER_BUCKET + 1
           );
         }
         if (bucketOffset !== undefined) {
@@ -87,7 +87,7 @@ module.exports = {
           new Uint32Array(
             data,
             getOffset(name) + config.METADATA_BYTES,
-            bucket * config.BINS_PER_BUCKET
+            (bucket * config.BINS_PER_BUCKET) + 1
           )
         );
         // produce a new array of config.BINS_PER_BUCKET+1 values
@@ -96,7 +96,7 @@ module.exports = {
           data,
           getOffset(name) +
             config.METADATA_BYTES +
-            (config.HISTOGRAM_BINS * (bucket / config.NUM_BUCKETS)),
+            (((config.HISTOGRAM_BINS - 1) * 4) * (bucket / config.NUM_BUCKETS)) + 4,
           config.BINS_PER_BUCKET
         );
         var ret = new Uint32Array(newBuf);

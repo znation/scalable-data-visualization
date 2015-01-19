@@ -16,6 +16,15 @@ var WebSocketServer = ws.Server
 var data = new ArrayBuffer(config.TOTAL_BYTES);
 var histogram = require('./histogram.js').histogram(data);
 
+// utility functions
+function compareDates(d1, d2) {
+  var onlyDate = [d1, d2].map(function(d) {
+    return (new Date(d.getFullYear(), d.getMonth(), d.getDate())).getTime();
+  });
+  return onlyDate[0] === onlyDate[1];
+}
+
+// run on WebSocket open
 var process = function(ws) {
   ws.on('close', function() {
     console.log('disconnected');
@@ -23,18 +32,35 @@ var process = function(ws) {
   });
 
   var previousHundredthPct = 0;
+  var previousDate = null;
+  var txAmount = 0;
 
   // report first (resume for reset client)
   ws.send(new Buffer(new Uint8Array(data)));
+
+  // build a histogram of tx amount / date, for all blocks
   blockchain.read(function(block, bytesRead, totalSize) {
+    // compare dates
+    var currentDate = new Date(block.header.time * 1000);
+    if (previousDate === null) {
+      previousDate = currentDate;
+    }
+    if (!compareDates(previousDate, currentDate)) {
+      // TODO -- this code will omit any transactions recorded on the last day
+      histogram.addValue('txAmount', txAmount);
+      txAmount = 0;
+    }
+    previousDate = currentDate;
+
     block.txs.forEach(function(tx) {
+
       // get the total tx amount
-      var txAmount = tx.outputs.reduce(function(prev, output) {
+      var txAmtThisBlock = tx.outputs.reduce(function(prev, output) {
         return output._satoshis.toNumber();
       }, 0);
       // convert satoshis into bitcoin
-      txAmount *= 0.00000001;
-      histogram.addValue('txAmount', txAmount);
+      txAmtThisBlock *= 0.00000001;
+      txAmount += txAmtThisBlock;
     });
 
     // reporting
