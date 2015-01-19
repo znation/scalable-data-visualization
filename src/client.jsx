@@ -56,7 +56,7 @@ var Histogram = React.createClass({
       .domain([0, values.length])
       .range([0, width]);
     var yScale = d3.scale.linear()
-      .domain([d3.min(values), d3.max(values)])
+      .domain([d3.min(values), data.maxValue])
       .range([0, height]);
     return (
       <div className="histogram" onMouseDown={this.preventDefault}>

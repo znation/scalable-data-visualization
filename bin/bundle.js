@@ -54,7 +54,7 @@ var Histogram = React.createClass({ displayName: "Histogram",
     var width = 606;
     var height = Math.floor(width / 4);
     var xScale = d3.scale.linear().domain([0, values.length]).range([0, width]);
-    var yScale = d3.scale.linear().domain([d3.min(values), d3.max(values)]).range([0, height]);
+    var yScale = d3.scale.linear().domain([d3.min(values), data.maxValue]).range([0, height]);
     return React.createElement("div", { className: "histogram", onMouseDown: this.preventDefault }, React.createElement("div", { className: "zoomControls" }, "Viewing at 10^", data.bucket, " scale.", this.state.bucketOffset === 0 ? null : React.createElement("a", {
       className: "btn btn-default",
       onClick: this.zoomOut
@@ -28008,6 +28008,10 @@ module.exports = {
         this.bins[name][findBin(value)]++;
       },
 
+      sumBelowBucket: function (name, bucket) {
+        return d3.sum(new Uint32Array(data, getOffset(name) + config.METADATA_BYTES, bucket * config.BINS_PER_BUCKET + 1));
+      },
+
       formatHistogram: function (name, bucketOffset) {
         // return only the bins within the largest bucket,
         // collapsing all smaller buckets into the 1st element of the largest one
@@ -28019,18 +28023,20 @@ module.exports = {
         if (bucketOffset !== undefined) {
           bucket -= bucketOffset;
         }
-        var allValuesBelowBucket = d3.sum(new Uint32Array(data, getOffset(name) + config.METADATA_BYTES, bucket * config.BINS_PER_BUCKET + 1));
         // produce a new array of config.BINS_PER_BUCKET+1 values
         var newBuf = new ArrayBuffer((config.BINS_PER_BUCKET + 1) * 4);
         var bucketData = new Uint32Array(data, getOffset(name) + config.METADATA_BYTES + (config.HISTOGRAM_BINS - 1) * 4 * (bucket / config.NUM_BUCKETS) + 4, config.BINS_PER_BUCKET);
         var ret = new Uint32Array(newBuf);
-        ret[0] = allValuesBelowBucket;
+        ret[0] = this.sumBelowBucket(name, bucket);
         for (var i = 0; i < config.BINS_PER_BUCKET; i++) {
           ret[i + 1] = bucketData[i];
         }
+
+        var maxValue = Math.max(this.sumBelowBucket(name, bucket + bucketOffset), d3.max(ret));
         return {
           values: ret,
-          bucket: bucket
+          bucket: bucket,
+          maxValue: maxValue
         };
       }
     };

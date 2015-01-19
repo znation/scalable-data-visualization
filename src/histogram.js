@@ -63,6 +63,16 @@ module.exports = {
         this.bins[name][findBin(value)]++;
       },
 
+      sumBelowBucket: function(name, bucket) {
+        return d3.sum(
+          new Uint32Array(
+            data,
+            getOffset(name) + config.METADATA_BYTES,
+            (bucket * config.BINS_PER_BUCKET) + 1
+          )
+        );
+      },
+
       formatHistogram: function(name, bucketOffset) {
         // return only the bins within the largest bucket,
         // collapsing all smaller buckets into the 1st element of the largest one
@@ -78,13 +88,6 @@ module.exports = {
         if (bucketOffset !== undefined) {
           bucket -= bucketOffset;
         }
-        var allValuesBelowBucket = d3.sum(
-          new Uint32Array(
-            data,
-            getOffset(name) + config.METADATA_BYTES,
-            (bucket * config.BINS_PER_BUCKET) + 1
-          )
-        );
         // produce a new array of config.BINS_PER_BUCKET+1 values
         var newBuf = new ArrayBuffer((config.BINS_PER_BUCKET+1) * 4);
         var bucketData = new Uint32Array(
@@ -95,13 +98,19 @@ module.exports = {
           config.BINS_PER_BUCKET
         );
         var ret = new Uint32Array(newBuf);
-        ret[0] = allValuesBelowBucket;
+        ret[0] = this.sumBelowBucket(name, bucket);
         for (var i=0; i<config.BINS_PER_BUCKET; i++) {
           ret[i+1] = bucketData[i];
         }
+
+        var maxValue = Math.max(
+          this.sumBelowBucket(name, bucket + bucketOffset),
+          d3.max(ret)
+        );
         return {
           values: ret,
-          bucket: bucket
+          bucket: bucket,
+          maxValue: maxValue
         };
       }
     };
