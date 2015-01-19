@@ -27838,7 +27838,42 @@ function ws(uri, protocols, opts) {
 
 if (WebSocket) ws.prototype = WebSocket.prototype;
 
-},{}],"/Users/zach/talk_demo/src/components/dashboard.jsx":[function(require,module,exports){
+},{}],"/Users/zach/talk_demo/src/components/bars.jsx":[function(require,module,exports){
+"use strict";
+
+// external deps
+var React = require("react");
+
+// utility functions
+function translate(x, y) {
+  return "translate(" + x + "px," + y + "px)";
+}
+
+module.exports = React.createClass({ displayName: "exports",
+  render: function () {
+    return React.createElement("g", { style: { transform: "translateX(100px)" } }, this.props.values.map((function (value, idx) {
+      var click = null;
+      if (this.props.bucket !== 0 && idx === 0) {
+        // make the first bar clickable, to dive into the results there
+        click = this.props.zoomIn;
+      }
+      return React.createElement("rect", {
+        fill: "#0a8cc4",
+        key: idx,
+        x: 0,
+        y: 0,
+        width: this.props.width / this.props.values.length,
+        height: this.props.scales.y(value),
+        style: {
+          cursor: click === null ? "auto" : "pointer",
+          transform: translate(this.props.scales.x(idx), this.props.height - this.props.scales.y(value))
+        },
+        onClick: click });
+    }).bind(this)));
+  }
+});
+
+},{"react":"/Users/zach/talk_demo/node_modules/react/react.js"}],"/Users/zach/talk_demo/src/components/dashboard.jsx":[function(require,module,exports){
 "use strict";
 
 var React = require("react");
@@ -27871,6 +27906,9 @@ module.exports = React.createClass({ displayName: "exports",
 var React = require("react");
 var d3 = require("d3");
 
+// internal deps
+var Bars = require("./bars.jsx");
+
 // utility functions
 function regularArray(typedArray) {
   var arr = new Array(typedArray.length);
@@ -27878,9 +27916,6 @@ function regularArray(typedArray) {
     arr[i] = typedArray[i];
   }
   return arr;
-}
-function translate(x, y) {
-  return "translate(" + x + "px," + y + "px)";
 }
 
 module.exports = React.createClass({ displayName: "exports",
@@ -27911,7 +27946,7 @@ module.exports = React.createClass({ displayName: "exports",
     var data = this.props.data.formatHistogram(this.props.name, this.state.bucketOffset);
     var values = regularArray(data.values);
 
-    var width = 606;
+    var width = 630;
     var height = Math.floor(width / 2);
     var xScale = d3.scale.linear().domain([0, values.length]).range([0, width]);
     var yScale = d3.scale.linear().domain([d3.min(values), data.maxValue]).range([0, height]);
@@ -27919,31 +27954,22 @@ module.exports = React.createClass({ displayName: "exports",
       className: "btn btn-default",
       onClick: this.zoomOut
     }, "Zoom Out")), React.createElement("svg", {
+      width: width + 100,
+      height: height + 100
+    }, React.createElement(Bars, {
+      values: values,
+      bucket: data.bucket,
       width: width,
-      height: height
-    }, values.map((function (value, idx) {
-      var click = null;
-      if (data.bucket !== 0 && idx === 0) {
-        // make the first bar clickable, to dive into the results there
-        click = this.zoomIn;
-      }
-      return React.createElement("rect", {
-        fill: "#0a8cc4",
-        key: idx,
-        x: 0,
-        y: 0,
-        width: width / values.length,
-        height: yScale(value),
-        style: {
-          cursor: click === null ? "auto" : "pointer",
-          transform: translate(xScale(idx), height - yScale(value))
-        },
-        onClick: click });
-    }).bind(this))));
+      height: height,
+      scales: {
+        x: xScale,
+        y: yScale
+      },
+      zoomIn: this.zoomIn })));
   }
 });
 
-},{"d3":"/Users/zach/talk_demo/node_modules/d3/d3.js","react":"/Users/zach/talk_demo/node_modules/react/react.js"}],"/Users/zach/talk_demo/src/config.js":[function(require,module,exports){
+},{"./bars.jsx":"/Users/zach/talk_demo/src/components/bars.jsx","d3":"/Users/zach/talk_demo/node_modules/d3/d3.js","react":"/Users/zach/talk_demo/node_modules/react/react.js"}],"/Users/zach/talk_demo/src/config.js":[function(require,module,exports){
 "use strict";
 
 var numBuckets = 10;

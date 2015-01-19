@@ -4,6 +4,9 @@
 var React = require('react');
 var d3 = require('d3');
 
+// internal deps
+var Bars = require('./bars.jsx');
+
 // utility functions
 function regularArray(typedArray) {
   var arr = new Array(typedArray.length);
@@ -11,9 +14,6 @@ function regularArray(typedArray) {
     arr[i] = typedArray[i];
   }
   return arr;
-}
-function translate(x, y) {
-  return 'translate(' + x + 'px,' + y + 'px)';
 }
 
 module.exports = React.createClass({
@@ -44,7 +44,7 @@ module.exports = React.createClass({
     var data = this.props.data.formatHistogram(this.props.name, this.state.bucketOffset);
     var values = regularArray(data.values);
 
-    var width = 606;
+    var width = 630;
     var height = Math.floor(width/2);
     var xScale = d3.scale.linear()
       .domain([0, values.length])
@@ -66,32 +66,20 @@ module.exports = React.createClass({
           )}
         </div>
         <svg
-          width={width}
-          height={height}
+          width={width + 100}
+          height={height + 100}
         >
-          {values.map(function(value, idx) {
-            var click = null;
-            if (data.bucket !== 0 &&
-                idx === 0) {
-              // make the first bar clickable, to dive into the results there
-              click = this.zoomIn;
-            }
-            return (
-              <rect
-                fill='#0a8cc4'
-                key={idx}
-                x={0}
-                y={0}
-                width={width/values.length}
-                height={yScale(value)}
-                style={{
-                  cursor: click === null ? 'auto' : 'pointer',
-                  transform: translate(xScale(idx), height - yScale(value))
-                }}
-                onClick={click}
-              />
-            );
-          }.bind(this))}
+          <Bars
+            values={values}
+            bucket={data.bucket}
+            width={width}
+            height={height}
+            scales={{
+              x: xScale,
+              y: yScale
+            }}
+            zoomIn={this.zoomIn}
+          />
         </svg>
       </div>
     );
