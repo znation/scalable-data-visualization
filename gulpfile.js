@@ -40,7 +40,7 @@ gulp.task('less', function() {
 
 gulp.task('watch', function() {
   livereload.listen();
-  gulp.watch(['src/*.js', 'src/*.jsx'], ['client']);
+  gulp.watch(['src/*.js', 'src/**/*.jsx'], ['client']);
   gulp.watch('src/*.js', ['server']);
   gulp.watch('src/*.less', ['less']);
 });

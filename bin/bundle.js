@@ -3,105 +3,14 @@
 
 // external deps
 var React = require("react");
-var d3 = require("d3");
-var ws = require("ws");
 
 // internal deps
-var config = require("./config.js");
-var hist = require("./histogram.js").histogram;
-
-// utility functions
-function regularArray(typedArray) {
-  var arr = new Array(typedArray.length);
-  for (var i = 0; i < typedArray.length; i++) {
-    arr[i] = typedArray[i];
-  }
-  return arr;
-}
-function translate(x, y) {
-  return "translate(" + x + "px," + y + "px)";
-}
+var Dashboard = require("./components/dashboard.jsx");
 
 // React components
-var Histogram = React.createClass({ displayName: "Histogram",
-  /* component functions */
-  zoom: function (amt) {
-    this.setState({ bucketOffset: this.state.bucketOffset + amt });
-  },
-  /* event handlers */
-  preventDefault: function (evt) {
-    // used on component to prevent text selection via double-click
-    evt.preventDefault();
-  },
-  zoomIn: function (evt) {
-    evt.stopPropagation();
-    this.zoom(1);
-  },
-  zoomOut: function (evt) {
-    evt.stopPropagation();
-    this.zoom(-1);
-  },
-  /* react lifecycle methods */
-  getInitialState: function () {
-    return { bucketOffset: 0 };
-  },
-  render: function () {
-    // TODO -- figure out how to cleanly map over typed arrays
-    // without having to copy to a regular array
-    var data = this.props.data.formatHistogram(this.props.name, this.state.bucketOffset);
-    var values = regularArray(data.values);
-
-    var width = 606;
-    var height = Math.floor(width / 2);
-    var xScale = d3.scale.linear().domain([0, values.length]).range([0, width]);
-    var yScale = d3.scale.linear().domain([d3.min(values), data.maxValue]).range([0, height]);
-    return React.createElement("div", { className: "histogram", onMouseDown: this.preventDefault }, React.createElement("div", { className: "zoomControls" }, "Viewing at 10^", data.bucket, " scale.", this.state.bucketOffset === 0 ? null : React.createElement("a", {
-      className: "btn btn-default",
-      onClick: this.zoomOut
-    }, "Zoom Out")), React.createElement("svg", {
-      width: width,
-      height: height
-    }, values.map((function (value, idx) {
-      var click = null;
-      if (data.bucket !== 0 && idx === 0) {
-        // make the first bar clickable, to dive into the results there
-        click = this.zoomIn;
-      }
-      return React.createElement("rect", {
-        fill: "#0a8cc4",
-        key: idx,
-        x: 0,
-        y: 0,
-        width: width / values.length,
-        height: yScale(value),
-        style: {
-          cursor: click === null ? "auto" : "pointer",
-          transform: translate(xScale(idx), height - yScale(value))
-        },
-        onClick: click });
-    }).bind(this))));
-  }
-});
-
-var Dashboard = React.createClass({ displayName: "Dashboard",
-  getInitialState: function () {
-    return { histogram: hist(config.TOTAL_BYTES) };
-  },
-  componentDidMount: function () {
-    var wsc = new ws("ws://localhost:8081");
-    wsc.binaryType = "arraybuffer";
-    wsc.onmessage = (function (message) {
-      this.setState({ histogram: hist(message.data) });
-    }).bind(this);
-  },
-  render: function () {
-    return React.createElement("div", { className: "container" }, React.createElement("div", { className: "row" }, React.createElement("div", { className: "col-xs-12" }, React.createElement("h1", null, "Scalable Data Visualization"), React.createElement("h2", null, "Visualizing the Bitcoin Blockchain"))), React.createElement("div", { className: "row" }, React.createElement("div", { className: "col-xs-12" }, React.createElement(Histogram, { data: this.state.histogram, name: "txAmount" }))));
-  }
-});
-
 React.render(React.createElement(Dashboard, null), document.getElementById("demo"));
 
-},{"./config.js":"/Users/zach/talk_demo/src/config.js","./histogram.js":"/Users/zach/talk_demo/src/histogram.js","d3":"/Users/zach/talk_demo/node_modules/d3/d3.js","react":"/Users/zach/talk_demo/node_modules/react/react.js","ws":"/Users/zach/talk_demo/node_modules/ws/lib/browser.js"}],"/Users/zach/talk_demo/node_modules/browserify/node_modules/process/browser.js":[function(require,module,exports){
+},{"./components/dashboard.jsx":"/Users/zach/talk_demo/src/components/dashboard.jsx","react":"/Users/zach/talk_demo/node_modules/react/react.js"}],"/Users/zach/talk_demo/node_modules/browserify/node_modules/process/browser.js":[function(require,module,exports){
 // shim for using process in browser
 
 var process = module.exports = {};
@@ -27929,7 +27838,112 @@ function ws(uri, protocols, opts) {
 
 if (WebSocket) ws.prototype = WebSocket.prototype;
 
-},{}],"/Users/zach/talk_demo/src/config.js":[function(require,module,exports){
+},{}],"/Users/zach/talk_demo/src/components/dashboard.jsx":[function(require,module,exports){
+"use strict";
+
+var React = require("react");
+var ws = require("ws");
+
+var Histogram = require("./histogram.jsx");
+var config = require("../config.js");
+var hist = require("../histogram.js").histogram;
+
+module.exports = React.createClass({ displayName: "exports",
+  getInitialState: function () {
+    return { histogram: hist(config.TOTAL_BYTES) };
+  },
+  componentDidMount: function () {
+    var wsc = new ws("ws://localhost:8081");
+    wsc.binaryType = "arraybuffer";
+    wsc.onmessage = (function (message) {
+      this.setState({ histogram: hist(message.data) });
+    }).bind(this);
+  },
+  render: function () {
+    return React.createElement("div", { className: "container" }, React.createElement("div", { className: "row" }, React.createElement("div", { className: "col-xs-12" }, React.createElement("h1", null, "Scalable Data Visualization"), React.createElement("h2", null, "Visualizing the Bitcoin Blockchain"))), React.createElement("div", { className: "row" }, React.createElement("div", { className: "col-xs-12" }, React.createElement(Histogram, { data: this.state.histogram, name: "txAmount" }))));
+  }
+});
+
+},{"../config.js":"/Users/zach/talk_demo/src/config.js","../histogram.js":"/Users/zach/talk_demo/src/histogram.js","./histogram.jsx":"/Users/zach/talk_demo/src/components/histogram.jsx","react":"/Users/zach/talk_demo/node_modules/react/react.js","ws":"/Users/zach/talk_demo/node_modules/ws/lib/browser.js"}],"/Users/zach/talk_demo/src/components/histogram.jsx":[function(require,module,exports){
+"use strict";
+
+// external deps
+var React = require("react");
+var d3 = require("d3");
+
+// utility functions
+function regularArray(typedArray) {
+  var arr = new Array(typedArray.length);
+  for (var i = 0; i < typedArray.length; i++) {
+    arr[i] = typedArray[i];
+  }
+  return arr;
+}
+function translate(x, y) {
+  return "translate(" + x + "px," + y + "px)";
+}
+
+module.exports = React.createClass({ displayName: "exports",
+  /* component functions */
+  zoom: function (amt) {
+    this.setState({ bucketOffset: this.state.bucketOffset + amt });
+  },
+  /* event handlers */
+  preventDefault: function (evt) {
+    // used on component to prevent text selection via double-click
+    evt.preventDefault();
+  },
+  zoomIn: function (evt) {
+    evt.stopPropagation();
+    this.zoom(1);
+  },
+  zoomOut: function (evt) {
+    evt.stopPropagation();
+    this.zoom(-1);
+  },
+  /* react lifecycle methods */
+  getInitialState: function () {
+    return { bucketOffset: 0 };
+  },
+  render: function () {
+    // TODO -- figure out how to cleanly map over typed arrays
+    // without having to copy to a regular array
+    var data = this.props.data.formatHistogram(this.props.name, this.state.bucketOffset);
+    var values = regularArray(data.values);
+
+    var width = 606;
+    var height = Math.floor(width / 2);
+    var xScale = d3.scale.linear().domain([0, values.length]).range([0, width]);
+    var yScale = d3.scale.linear().domain([d3.min(values), data.maxValue]).range([0, height]);
+    return React.createElement("div", { className: "histogram", onMouseDown: this.preventDefault }, React.createElement("div", { className: "zoomControls" }, "Viewing at 10^", data.bucket, " scale.", this.state.bucketOffset === 0 ? null : React.createElement("a", {
+      className: "btn btn-default",
+      onClick: this.zoomOut
+    }, "Zoom Out")), React.createElement("svg", {
+      width: width,
+      height: height
+    }, values.map((function (value, idx) {
+      var click = null;
+      if (data.bucket !== 0 && idx === 0) {
+        // make the first bar clickable, to dive into the results there
+        click = this.zoomIn;
+      }
+      return React.createElement("rect", {
+        fill: "#0a8cc4",
+        key: idx,
+        x: 0,
+        y: 0,
+        width: width / values.length,
+        height: yScale(value),
+        style: {
+          cursor: click === null ? "auto" : "pointer",
+          transform: translate(xScale(idx), height - yScale(value))
+        },
+        onClick: click });
+    }).bind(this))));
+  }
+});
+
+},{"d3":"/Users/zach/talk_demo/node_modules/d3/d3.js","react":"/Users/zach/talk_demo/node_modules/react/react.js"}],"/Users/zach/talk_demo/src/config.js":[function(require,module,exports){
 "use strict";
 
 var numBuckets = 10;
