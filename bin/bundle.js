@@ -52,7 +52,7 @@ var Histogram = React.createClass({ displayName: "Histogram",
     var values = regularArray(data.values);
 
     var width = 606;
-    var height = Math.floor(width / 4);
+    var height = Math.floor(width / 2);
     var xScale = d3.scale.linear().domain([0, values.length]).range([0, width]);
     var yScale = d3.scale.linear().domain([d3.min(values), data.maxValue]).range([0, height]);
     return React.createElement("div", { className: "histogram", onMouseDown: this.preventDefault }, React.createElement("div", { className: "zoomControls" }, "Viewing at 10^", data.bucket, " scale.", this.state.bucketOffset === 0 ? null : React.createElement("a", {

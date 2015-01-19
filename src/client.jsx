@@ -51,7 +51,7 @@ var Histogram = React.createClass({
     var values = regularArray(data.values);
 
     var width = 606;
-    var height = Math.floor(width/4);
+    var height = Math.floor(width/2);
     var xScale = d3.scale.linear()
       .domain([0, values.length])
       .range([0, width]);
