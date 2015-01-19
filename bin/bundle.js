@@ -27920,7 +27920,7 @@ var React = require("react");
 var ws = require("ws");
 
 var Histogram = require("./streaming_histogram.jsx");
-var config = require("../config.js");
+var config = require("../streaming_histogram.js").config;
 var hist = require("../streaming_histogram.js").histogram;
 
 module.exports = React.createClass({ displayName: "exports",
@@ -27939,7 +27939,7 @@ module.exports = React.createClass({ displayName: "exports",
   }
 });
 
-},{"../config.js":"/Users/zach/talk_demo/src/config.js","../streaming_histogram.js":"/Users/zach/talk_demo/src/streaming_histogram.js","./streaming_histogram.jsx":"/Users/zach/talk_demo/src/components/streaming_histogram.jsx","react":"/Users/zach/talk_demo/node_modules/react/react.js","ws":"/Users/zach/talk_demo/node_modules/ws/lib/browser.js"}],"/Users/zach/talk_demo/src/components/streaming_histogram.jsx":[function(require,module,exports){
+},{"../streaming_histogram.js":"/Users/zach/talk_demo/src/streaming_histogram.js","./streaming_histogram.jsx":"/Users/zach/talk_demo/src/components/streaming_histogram.jsx","react":"/Users/zach/talk_demo/node_modules/react/react.js","ws":"/Users/zach/talk_demo/node_modules/ws/lib/browser.js"}],"/Users/zach/talk_demo/src/components/streaming_histogram.jsx":[function(require,module,exports){
 "use strict";
 
 // external deps
@@ -27949,7 +27949,7 @@ var d3 = require("d3");
 // internal deps
 var Axis = require("./axis.jsx");
 var Bars = require("./bars.jsx");
-var config = require("../config.js");
+var config = require("../streaming_histogram.js").config;
 
 // utility functions
 function regularArray(typedArray) {
@@ -28023,7 +28023,7 @@ module.exports = React.createClass({ displayName: "exports",
   }
 });
 
-},{"../config.js":"/Users/zach/talk_demo/src/config.js","./axis.jsx":"/Users/zach/talk_demo/src/components/axis.jsx","./bars.jsx":"/Users/zach/talk_demo/src/components/bars.jsx","d3":"/Users/zach/talk_demo/node_modules/d3/d3.js","react":"/Users/zach/talk_demo/node_modules/react/react.js"}],"/Users/zach/talk_demo/src/config.js":[function(require,module,exports){
+},{"../streaming_histogram.js":"/Users/zach/talk_demo/src/streaming_histogram.js","./axis.jsx":"/Users/zach/talk_demo/src/components/axis.jsx","./bars.jsx":"/Users/zach/talk_demo/src/components/bars.jsx","d3":"/Users/zach/talk_demo/node_modules/d3/d3.js","react":"/Users/zach/talk_demo/node_modules/react/react.js"}],"/Users/zach/talk_demo/src/streaming_histogram.js":[function(require,module,exports){
 "use strict";
 
 var numBuckets = 10;
@@ -28033,7 +28033,7 @@ var numHistograms = 1;
 var metadataBytes = 8;
 var histogramBytes = bins * 4;
 
-module.exports = {
+var config = {
   SMALLEST_VALUE: 0.01,
   NUM_HISTOGRAMS: numHistograms,
   HISTOGRAM_BINS: bins,
@@ -28043,11 +28043,6 @@ module.exports = {
   NUM_BUCKETS: numBuckets,
   BINS_PER_BUCKET: numBinsPerBucket
 };
-
-},{}],"/Users/zach/talk_demo/src/streaming_histogram.js":[function(require,module,exports){
-"use strict";
-
-var config = require("./config.js");
 
 function log10(x) {
   return Math.log(x) / Math.LN10;
@@ -28086,6 +28081,7 @@ function getOffset(name) {
 };
 
 module.exports = {
+  config: config,
   findBin: findBin,
   histogram: function (data) {
     // create views into bins (Uint32 array of HISTOGRAM_BINS length each)
@@ -28140,6 +28136,6 @@ module.exports = {
   }
 };
 
-},{"./config.js":"/Users/zach/talk_demo/src/config.js"}]},{},["./src/client.jsx"]);
+},{}]},{},["./src/client.jsx"]);
 
 //# sourceMappingURL=bundle.js.map

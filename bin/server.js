@@ -7,7 +7,7 @@ var ws = require("ws");
 
 // internal deps
 var blockchain = require("./blockchain.js");
-var config = require("./config.js");
+var config = require("./streaming_histogram.js").config;
 
 // start up ws server
 var WebSocketServer = ws.Server, wss = new WebSocketServer({ port: 8081 });

@@ -7,7 +7,7 @@ var d3 = require('d3');
 // internal deps
 var Axis = require('./axis.jsx');
 var Bars = require('./bars.jsx');
-var config = require('../config.js');
+var config = require('../streaming_histogram.js').config;
 
 // utility functions
 function regularArray(typedArray) {

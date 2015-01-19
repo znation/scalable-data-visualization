@@ -1,6 +1,22 @@
 'use strict';
 
-var config = require('./config.js');
+var numBuckets = 10;
+var numBinsPerBucket = 20;
+var bins = (numBinsPerBucket * numBuckets) + 1; // supports values up to 10^10
+var numHistograms = 1;
+var metadataBytes = 8;
+var histogramBytes = bins * 4;
+
+var config = {
+  SMALLEST_VALUE: 0.01,
+  NUM_HISTOGRAMS: numHistograms,
+  HISTOGRAM_BINS: bins,
+  METADATA_BYTES: metadataBytes, // reserve 8 bytes for range (min,max)
+  HISTOGRAM_BYTES: histogramBytes,
+  TOTAL_BYTES: (metadataBytes + histogramBytes) * numHistograms,
+  NUM_BUCKETS: numBuckets,
+  BINS_PER_BUCKET: numBinsPerBucket
+};
 
 function log10(x) {
   return Math.log(x) / Math.LN10;
@@ -39,6 +55,7 @@ function getOffset(name) {
 };
 
 module.exports = {
+  config: config,
   findBin: findBin,
   histogram: function(data) {
     // create views into bins (Uint32 array of HISTOGRAM_BINS length each)

@@ -4,7 +4,7 @@ var React = require('react');
 var ws = require('ws');
 
 var Histogram = require('./streaming_histogram.jsx');
-var config = require('../config.js');
+var config = require('../streaming_histogram.js').config;
 var hist = require('../streaming_histogram.js').histogram;
 
 module.exports = React.createClass({
