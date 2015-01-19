@@ -27999,7 +27999,7 @@ module.exports = React.createClass({ displayName: "exports",
       width: width + 100,
       height: height + 100
     }, React.createElement(Axis, {
-      scale: d3.scale.linear().domain([0, 99].map(function (x) {
+      scale: d3.scale.linear().domain([1, 10].map(function (x) {
         return x * Math.pow(10, data.bucket) * config.SMALLEST_VALUE;
       })).range([0, width]),
 
@@ -28054,6 +28054,9 @@ function log10(x) {
 }
 
 function findBucket(n) {
+  if (n === 0) {
+    return 0; // avoid -Inf
+  }
   return Math.floor(log10(n / config.SMALLEST_VALUE));
 };
 

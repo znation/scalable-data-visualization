@@ -74,7 +74,9 @@ module.exports = React.createClass({
           <Axis
             scale={
               d3.scale.linear()
-                .domain([0, 99].map(function(x) { return x * Math.pow(10, data.bucket) * config.SMALLEST_VALUE; }))
+                .domain([1, 10].map(function(x) {
+                  return x * Math.pow(10, data.bucket) * config.SMALLEST_VALUE;
+                }))
                 .range([0, width])
             }
             x={100}

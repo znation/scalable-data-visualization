@@ -7,6 +7,9 @@ function log10(x) {
 }
 
 function findBucket(n) {
+  if (n === 0) {
+    return 0; // avoid -Inf
+  }
   return Math.floor(log10(n / config.SMALLEST_VALUE));
 };
 

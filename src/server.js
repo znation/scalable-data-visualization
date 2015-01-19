@@ -1,6 +1,7 @@
 'use strict';
 
 // external deps
+var d3 = require('d3');
 var staticServer = require('node-static');
 var ws = require('ws');
 
@@ -33,6 +34,7 @@ var process = function(ws) {
 
   var previousHundredthPct = 0;
   var previousDate = null;
+  var dateIdx = 0;
   var txAmount = 0;
 
   // report first (resume for reset client)
@@ -47,13 +49,24 @@ var process = function(ws) {
     }
     if (!compareDates(previousDate, currentDate)) {
       // TODO -- this code will omit any transactions recorded on the last day
+
+      // update histogram of txAmt per day
+      /*
+      d3.range(txAmount).map(function() {
+        histogram.addValue('txAmount', dateIdx);
+      });
+      */
+
+      // update histogram of txAmount
       histogram.addValue('txAmount', txAmount);
       txAmount = 0;
+
+      // update date counter
+      dateIdx++;
+      previousDate = currentDate;
     }
-    previousDate = currentDate;
 
     block.txs.forEach(function(tx) {
-
       // get the total tx amount
       var txAmtThisBlock = tx.outputs.reduce(function(prev, output) {
         return output._satoshis.toNumber();
