@@ -27882,10 +27882,10 @@ module.exports = React.createClass({ displayName: "exports",
         x: 0,
         y: 0,
         width: this.props.width / this.props.values.length,
-        height: this.props.scales.y(value),
+        height: 1, /* size with CSS transform to allow transitions */
         style: {
           cursor: click === null ? "auto" : "pointer",
-          transform: translate(this.props.scales.x(idx), this.props.height - this.props.scales.y(value))
+          transform: translate(this.props.scales.x(idx), this.props.height - this.props.scales.y(value)) + " scaleY(" + this.props.scales.y(value) + ")"
         },
         onClick: click });
     }).bind(this)));
