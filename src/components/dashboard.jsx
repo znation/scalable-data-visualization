@@ -3,7 +3,7 @@
 var React = require('react');
 var ws = require('ws');
 
-var Histogram = require('./histogram.jsx');
+var Histogram = require('./streaming_histogram.jsx');
 var config = require('../config.js');
 var hist = require('../streaming_histogram.js').histogram;
 

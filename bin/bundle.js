@@ -27919,7 +27919,7 @@ module.exports = React.createClass({ displayName: "exports",
 var React = require("react");
 var ws = require("ws");
 
-var Histogram = require("./histogram.jsx");
+var Histogram = require("./streaming_histogram.jsx");
 var config = require("../config.js");
 var hist = require("../streaming_histogram.js").histogram;
 
@@ -27939,7 +27939,7 @@ module.exports = React.createClass({ displayName: "exports",
   }
 });
 
-},{"../config.js":"/Users/zach/talk_demo/src/config.js","../streaming_histogram.js":"/Users/zach/talk_demo/src/streaming_histogram.js","./histogram.jsx":"/Users/zach/talk_demo/src/components/histogram.jsx","react":"/Users/zach/talk_demo/node_modules/react/react.js","ws":"/Users/zach/talk_demo/node_modules/ws/lib/browser.js"}],"/Users/zach/talk_demo/src/components/histogram.jsx":[function(require,module,exports){
+},{"../config.js":"/Users/zach/talk_demo/src/config.js","../streaming_histogram.js":"/Users/zach/talk_demo/src/streaming_histogram.js","./streaming_histogram.jsx":"/Users/zach/talk_demo/src/components/streaming_histogram.jsx","react":"/Users/zach/talk_demo/node_modules/react/react.js","ws":"/Users/zach/talk_demo/node_modules/ws/lib/browser.js"}],"/Users/zach/talk_demo/src/components/streaming_histogram.jsx":[function(require,module,exports){
 "use strict";
 
 // external deps
