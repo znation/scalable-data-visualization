@@ -56,17 +56,19 @@ module.exports = React.createClass({
       .range([0, height]);
     return (
       <div className="histogram" onMouseDown={this.preventDefault}>
-        <div className="zoomControls">
+        <p>
           Viewing at 10^{data.bucket} scale.
           {this.state.bucketOffset === 0 ? null : (
-            <a
-              className="btn btn-default"
-              onClick={this.zoomOut}
-            >
-              Zoom Out
-            </a>
+            <span>&nbsp;(
+              <a
+                href="javascript:"
+                onClick={this.zoomOut}
+              >
+                Zoom Out
+              </a>
+            )</span>
           )}
-        </div>
+        </p>
         <svg
           width={width + 100}
           height={height + 100}

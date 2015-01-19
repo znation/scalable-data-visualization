@@ -1,6 +1,7 @@
 'use strict';
 
-var React = require('react');
+var React = require('react/addons');
+var cx = React.addons.classSet;
 var ws = require('ws');
 
 var Histogram = require('./streaming_histogram.jsx');
@@ -9,7 +10,7 @@ var hist = require('../streaming_histogram.js').histogram;
 
 module.exports = React.createClass({
   getInitialState: function() {
-    return { histogram: hist(config.TOTAL_BYTES) };
+    return { activeTab: 'txAmount', histogram: hist(config.TOTAL_BYTES) };
   },
   componentDidMount: function() {
     var wsc = new ws('ws://localhost:8081');
@@ -29,7 +30,24 @@ module.exports = React.createClass({
         </div>
         <div className="row">
           <div className="col-xs-12">
-            <Histogram data={ this.state.histogram } name="txAmount" />
+            <ul className="nav nav-tabs" style={{marginBottom: 20}}>
+              <li
+                role="presentation"
+                className={cx({active: this.state.activeTab === 'txAmount'})}
+              >
+                <a
+                  href="javascript:"
+                  onClick={this.setState.bind(null, {activeTab:'txAmount'})}
+                >
+                  Transaction Amounts
+                </a>
+              </li>
+            </ul>
+            <Histogram
+              data={ this.state.histogram }
+              name="txAmount"
+              className={cx({ hide: this.state.activeTab !== 'txAmount' })}
+            />
           </div>
         </div>
       </div>

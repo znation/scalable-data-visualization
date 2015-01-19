@@ -5,9 +5,3 @@
 .histogram rect:hover {
   fill: #6ecef7;
 }
-.histogram .zoomControls {
-  height: 50px;
-}
-.histogram .zoomControls a.btn {
-  margin-left: 20px;
-}
