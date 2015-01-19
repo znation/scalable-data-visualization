@@ -15,7 +15,7 @@ var WebSocketServer = ws.Server
 
 // allocate one block of ArrayBuffer for all histograms and extrema
 var data = new ArrayBuffer(config.TOTAL_BYTES);
-var histogram = require('./histogram.js').histogram(data);
+var histogram = require('./streaming_histogram.js').histogram(data);
 
 // utility functions
 function compareDates(d1, d2) {

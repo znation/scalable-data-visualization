@@ -5,7 +5,7 @@ var ws = require('ws');
 
 var Histogram = require('./histogram.jsx');
 var config = require('../config.js');
-var hist = require('../histogram.js').histogram;
+var hist = require('../streaming_histogram.js').histogram;
 
 module.exports = React.createClass({
   getInitialState: function() {
