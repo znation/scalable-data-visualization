@@ -6,12 +6,16 @@ function log10(x) {
   return Math.log(x) / Math.LN10;
 }
 
+function findBucket(n) {
+  return Math.floor(log10(n / config.SMALLEST_VALUE));
+};
+
 function findBin(n) {
   // "bucket" represents the block of bins
   // (0.01 - 0.1, 0.1-1, 1-10, 11-100, etc.)
   // SMALLEST_VALUE represents the magnitude of the first bucket
   // each bucket represents one power of ten
-  var bucket = Math.floor(log10(n / config.SMALLEST_VALUE));
+  var bucket = findBucket(n);
   if (bucket < 0) {
     // values smaller than SMALLEST_VALUE go into a special 0 bin
     return 0;
@@ -59,19 +63,10 @@ module.exports = {
         this.bins[name][findBin(value)]++;
       },
 
-      findBucket: function(name) {
-        var maxValue = this.extrema[name][1];
-        if (maxValue === 0) {
-          // special case: extrema==0 means no data (or all zeros)
-          return 0;
-        }
-        return Math.floor(log10(maxValue));
-      },
-
       formatHistogram: function(name, bucketOffset) {
         // return only the bins within the largest bucket,
         // collapsing all smaller buckets into the 1st element of the largest one
-        var bucket = this.findBucket(name);
+        var bucket = findBucket(this.extrema[name][1]);
         if (bucket === 0) {
           // special case, just return the first bucket
           return new Uint32Array(
