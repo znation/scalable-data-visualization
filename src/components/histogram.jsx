@@ -7,6 +7,7 @@ var d3 = require('d3');
 // internal deps
 var Axis = require('./axis.jsx');
 var Bars = require('./bars.jsx');
+var config = require('../config.js');
 
 // utility functions
 function regularArray(typedArray) {
@@ -71,20 +72,24 @@ module.exports = React.createClass({
           height={height + 100}
         >
           <Axis
-            scale={{
-              x: xScale,
-              y: d3.scale.linear().domain([0,0]).range([0,0])
-            }}
+            scale={
+              d3.scale.linear()
+                .domain([0, 99].map(function(x) { return x * Math.pow(10, data.bucket) * config.SMALLEST_VALUE; }))
+                .range([0, width])
+            }
             x={100}
             y={height+1}
+            axis='x'
           />
           <Axis
-            scale={{
-              x: d3.scale.linear().domain([0,0]).range([0,0]),
-              y: yScale
-            }}
+            scale={
+              d3.scale.linear()
+                .domain([d3.min(values), data.maxValue])
+                .range([height, 0])
+            }
             x={99}
             y={0}
+            axis='y'
           />
           <Bars
             values={values}

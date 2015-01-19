@@ -27845,15 +27845,36 @@ var React = require("react");
 
 module.exports = React.createClass({ displayName: "exports",
   render: function () {
-    var $__0 = this.props.scale.x.domain(), minX = $__0[0], maxX = $__0[1];
-    var $__1 = this.props.scale.y.domain(), minY = $__1[0], maxY = $__1[1];
-    return React.createElement("g", null, React.createElement("line", {
-      x1: this.props.scale.x(minX) + this.props.x,
-      y1: this.props.scale.y(minY) + this.props.y,
-      x2: this.props.scale.x(maxX) + this.props.x,
-      y2: this.props.scale.y(maxY) + this.props.y,
+    var axis = this.props.axis;
+    var other = this.props.axis === "x" ? "y" : "x";
+    var tickLength = this.props.axis === "x" ? 8 : -8;
+    var scale = this.props.scale;
+    var $__0 = scale.domain(), min = $__0[0], max = $__0[1];
+    var axisLineProps = {
       stroke: "black",
-      strokeWidth: 2 }));
+      strokeWidth: 2
+    };
+    axisLineProps[axis + "1"] = scale(min) + this.props[axis];
+    axisLineProps[axis + "2"] = scale(max) + this.props[axis];
+    axisLineProps[other + "1"] = this.props[other];
+    axisLineProps[other + "2"] = this.props[other];
+    var axisLine = React.DOM.line(axisLineProps);
+    return React.createElement("g", null, axisLine, scale.ticks().map((function (tick, idx) {
+      var lineProps = {
+        stroke: "black",
+        strokeWidth: 2
+      };
+      lineProps[axis + "1"] = scale(tick) + this.props[axis];
+      lineProps[axis + "2"] = scale(tick) + this.props[axis];
+      lineProps[other + "1"] = this.props[other];
+      lineProps[other + "2"] = this.props[other] + tickLength;
+      var line = React.DOM.line(lineProps);
+      var labelProps = {};
+      labelProps[axis] = scale(tick) + this.props[axis];
+      labelProps[other] = this.props[other] + tickLength * 4;
+      var label = React.DOM.text(labelProps, tick);
+      return React.createElement("g", { key: idx }, line, label);
+    }).bind(this)));
   }
 });
 
@@ -27928,6 +27949,7 @@ var d3 = require("d3");
 // internal deps
 var Axis = require("./axis.jsx");
 var Bars = require("./bars.jsx");
+var config = require("../config.js");
 
 // utility functions
 function regularArray(typedArray) {
@@ -27977,18 +27999,18 @@ module.exports = React.createClass({ displayName: "exports",
       width: width + 100,
       height: height + 100
     }, React.createElement(Axis, {
-      scale: {
-        x: xScale,
-        y: d3.scale.linear().domain([0, 0]).range([0, 0])
-      },
+      scale: d3.scale.linear().domain([0, 99].map(function (x) {
+        return x * Math.pow(10, data.bucket) * config.SMALLEST_VALUE;
+      })).range([0, width]),
+
       x: 100,
-      y: height + 1 }), React.createElement(Axis, {
-      scale: {
-        x: d3.scale.linear().domain([0, 0]).range([0, 0]),
-        y: yScale
-      },
+      y: height + 1,
+      axis: "x" }), React.createElement(Axis, {
+      scale: d3.scale.linear().domain([d3.min(values), data.maxValue]).range([height, 0]),
+
       x: 99,
-      y: 0 }), React.createElement(Bars, {
+      y: 0,
+      axis: "y" }), React.createElement(Bars, {
       values: values,
       bucket: data.bucket,
       width: width,
@@ -28001,7 +28023,7 @@ module.exports = React.createClass({ displayName: "exports",
   }
 });
 
-},{"./axis.jsx":"/Users/zach/talk_demo/src/components/axis.jsx","./bars.jsx":"/Users/zach/talk_demo/src/components/bars.jsx","d3":"/Users/zach/talk_demo/node_modules/d3/d3.js","react":"/Users/zach/talk_demo/node_modules/react/react.js"}],"/Users/zach/talk_demo/src/config.js":[function(require,module,exports){
+},{"../config.js":"/Users/zach/talk_demo/src/config.js","./axis.jsx":"/Users/zach/talk_demo/src/components/axis.jsx","./bars.jsx":"/Users/zach/talk_demo/src/components/bars.jsx","d3":"/Users/zach/talk_demo/node_modules/d3/d3.js","react":"/Users/zach/talk_demo/node_modules/react/react.js"}],"/Users/zach/talk_demo/src/config.js":[function(require,module,exports){
 "use strict";
 
 var numBuckets = 10;
