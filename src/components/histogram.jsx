@@ -5,6 +5,7 @@ var React = require('react');
 var d3 = require('d3');
 
 // internal deps
+var Axis = require('./axis.jsx');
 var Bars = require('./bars.jsx');
 
 // utility functions
@@ -69,6 +70,22 @@ module.exports = React.createClass({
           width={width + 100}
           height={height + 100}
         >
+          <Axis
+            scale={{
+              x: xScale,
+              y: d3.scale.linear().domain([0,0]).range([0,0])
+            }}
+            x={100}
+            y={height+1}
+          />
+          <Axis
+            scale={{
+              x: d3.scale.linear().domain([0,0]).range([0,0]),
+              y: yScale
+            }}
+            x={99}
+            y={0}
+          />
           <Bars
             values={values}
             bucket={data.bucket}

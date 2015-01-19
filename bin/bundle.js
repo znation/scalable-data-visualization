@@ -27838,7 +27838,26 @@ function ws(uri, protocols, opts) {
 
 if (WebSocket) ws.prototype = WebSocket.prototype;
 
-},{}],"/Users/zach/talk_demo/src/components/bars.jsx":[function(require,module,exports){
+},{}],"/Users/zach/talk_demo/src/components/axis.jsx":[function(require,module,exports){
+"use strict";
+
+var React = require("react");
+
+module.exports = React.createClass({ displayName: "exports",
+  render: function () {
+    var $__0 = this.props.scale.x.domain(), minX = $__0[0], maxX = $__0[1];
+    var $__1 = this.props.scale.y.domain(), minY = $__1[0], maxY = $__1[1];
+    return React.createElement("g", null, React.createElement("line", {
+      x1: this.props.scale.x(minX) + this.props.x,
+      y1: this.props.scale.y(minY) + this.props.y,
+      x2: this.props.scale.x(maxX) + this.props.x,
+      y2: this.props.scale.y(maxY) + this.props.y,
+      stroke: "black",
+      strokeWidth: 2 }));
+  }
+});
+
+},{"react":"/Users/zach/talk_demo/node_modules/react/react.js"}],"/Users/zach/talk_demo/src/components/bars.jsx":[function(require,module,exports){
 "use strict";
 
 // external deps
@@ -27907,6 +27926,7 @@ var React = require("react");
 var d3 = require("d3");
 
 // internal deps
+var Axis = require("./axis.jsx");
 var Bars = require("./bars.jsx");
 
 // utility functions
@@ -27956,7 +27976,19 @@ module.exports = React.createClass({ displayName: "exports",
     }, "Zoom Out")), React.createElement("svg", {
       width: width + 100,
       height: height + 100
-    }, React.createElement(Bars, {
+    }, React.createElement(Axis, {
+      scale: {
+        x: xScale,
+        y: d3.scale.linear().domain([0, 0]).range([0, 0])
+      },
+      x: 100,
+      y: height + 1 }), React.createElement(Axis, {
+      scale: {
+        x: d3.scale.linear().domain([0, 0]).range([0, 0]),
+        y: yScale
+      },
+      x: 99,
+      y: 0 }), React.createElement(Bars, {
       values: values,
       bucket: data.bucket,
       width: width,
@@ -27969,7 +28001,7 @@ module.exports = React.createClass({ displayName: "exports",
   }
 });
 
-},{"./bars.jsx":"/Users/zach/talk_demo/src/components/bars.jsx","d3":"/Users/zach/talk_demo/node_modules/d3/d3.js","react":"/Users/zach/talk_demo/node_modules/react/react.js"}],"/Users/zach/talk_demo/src/config.js":[function(require,module,exports){
+},{"./axis.jsx":"/Users/zach/talk_demo/src/components/axis.jsx","./bars.jsx":"/Users/zach/talk_demo/src/components/bars.jsx","d3":"/Users/zach/talk_demo/node_modules/d3/d3.js","react":"/Users/zach/talk_demo/node_modules/react/react.js"}],"/Users/zach/talk_demo/src/config.js":[function(require,module,exports){
 "use strict";
 
 var numBuckets = 10;
