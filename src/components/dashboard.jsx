@@ -53,7 +53,6 @@ module.exports = React.createClass({
             </ul>
             <Histogram
               data={ this.state.histogram }
-              name="txAmount"
               className={cx({ hidden: this.state.activeTab !== 'Transaction Amounts' })}
             />
           </div>

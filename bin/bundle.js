@@ -29604,15 +29604,25 @@ module.exports = React.createClass({ displayName: "exports",
 var React = require("react");
 
 // utility functions
+function regularArray(typedArray) {
+  // TODO -- figure out how to cleanly map over typed arrays
+  // without having to copy to a regular array
+  var arr = new Array(typedArray.length);
+  for (var i = 0; i < typedArray.length; i++) {
+    arr[i] = typedArray[i];
+  }
+  return arr;
+}
 function translate(x, y) {
   return "translate(" + x + "px," + y + "px)";
 }
 
 module.exports = React.createClass({ displayName: "exports",
   render: function () {
-    return React.createElement("g", { style: { transform: "translateX(100px)" } }, this.props.values.map((function (value, idx) {
+    var values = regularArray(this.props.data.values);
+    return React.createElement("g", { style: { transform: "translateX(100px)" } }, values.map((function (value, idx) {
       var click = null;
-      if (this.props.bucket !== 0 && idx === 0) {
+      if (this.props.data.bucket !== 0 && idx === 0) {
         // make the first bar clickable, to dive into the results there
         click = this.props.zoomIn;
       }
@@ -29621,7 +29631,7 @@ module.exports = React.createClass({ displayName: "exports",
         key: idx,
         x: 0,
         y: 0,
-        width: this.props.width / this.props.values.length,
+        width: this.props.width / values.length,
         height: 1, /* size with CSS transform to allow transitions */
         style: {
           cursor: click === null ? "auto" : "pointer",
@@ -29669,7 +29679,6 @@ module.exports = React.createClass({ displayName: "exports",
       }, name));
     }).bind(this))), React.createElement(Histogram, {
       data: this.state.histogram,
-      name: "txAmount",
       className: cx({ hidden: this.state.activeTab !== "Transaction Amounts" }) }))));
   }
 });
@@ -29685,15 +29694,6 @@ var d3 = require("d3");
 var Axis = require("./axis.jsx");
 var Bars = require("./bars.jsx");
 var config = require("../streaming_histogram.js").config;
-
-// utility functions
-function regularArray(typedArray) {
-  var arr = new Array(typedArray.length);
-  for (var i = 0; i < typedArray.length; i++) {
-    arr[i] = typedArray[i];
-  }
-  return arr;
-}
 
 module.exports = React.createClass({ displayName: "exports",
   /* component functions */
@@ -29718,18 +29718,15 @@ module.exports = React.createClass({ displayName: "exports",
     return { bucketOffset: 0 };
   },
   render: function () {
-    // TODO -- figure out how to cleanly map over typed arrays
-    // without having to copy to a regular array
-    var data = this.props.data.formatHistogram(this.props.name, this.state.bucketOffset);
-    var values = regularArray(data.values);
+    var data = this.props.data.formatHistogram(this.state.bucketOffset);
 
     var width = 630;
     var height = Math.floor(width / 2);
-    var xScale = d3.scale.linear().domain([0, values.length]).range([0, width]);
-    var yScale = d3.scale.linear().domain([d3.min(values), data.maxValue]).range([0, height]);
+    var xScale = d3.scale.linear().domain([0, data.values.length]).range([0, width]);
+    var yScale = d3.scale.linear().domain([d3.min(data.values), data.maxValue]).range([0, height]);
     return React.createElement("div", {
       className: "histogram " + this.props.className,
-      onMouseDown: this.preventDefault }, React.createElement("p", null, "Viewing at 10^", data.bucket, " scale.", this.state.bucketOffset === 0 ? null : React.createElement("span", null, " (", React.createElement("a", {
+      onMouseDown: this.preventDefault }, React.createElement("p", null, data.bucket ? React.createElement("span", null, "Viewing at 10^", data.bucket, " scale.") : React.createElement("span", null, "Loading..."), this.state.bucketOffset === 0 ? null : React.createElement("span", null, " (", React.createElement("a", {
       href: "javascript:",
       onClick: this.zoomOut
     }, "Zoom Out"), ")")), React.createElement("svg", {
@@ -29743,13 +29740,12 @@ module.exports = React.createClass({ displayName: "exports",
       x: 100,
       y: height + 1,
       axis: "x" }), React.createElement(Axis, {
-      scale: d3.scale.linear().domain([d3.min(values), data.maxValue]).range([height, 0]),
+      scale: d3.scale.linear().domain([d3.min(data.values), data.maxValue]).range([height, 0]),
 
       x: 99,
       y: 0,
       axis: "y" }), React.createElement(Bars, {
-      values: values,
-      bucket: data.bucket,
+      data: data,
       width: width,
       height: height,
       scales: {
@@ -29764,7 +29760,7 @@ module.exports = React.createClass({ displayName: "exports",
 "use strict";
 
 var numBuckets = 10;
-var numBinsPerBucket = 20;
+var numBinsPerBucket = 100;
 var bins = numBinsPerBucket * numBuckets + 1; // supports values up to 10^10
 var numHistograms = 1;
 var metadataBytes = 8;
@@ -29811,58 +29807,50 @@ function findBin(n) {
   return ret + 1; // account for the "0" bin (values smaller than SMALLEST_VALUE)
 };
 
-function getOffset(name) {
-  if (name === "txAmount") {
-    return 0;
-  }
-};
-
 module.exports = {
   config: config,
   findBin: findBin,
   histogram: function (data) {
     // create views into bins (Uint32 array of HISTOGRAM_BINS length each)
     return {
-      bins: {
-        txAmount: new Uint32Array(data, getOffset("txAmount") + config.METADATA_BYTES, config.HISTOGRAM_BINS)
-      },
+      bins: new Uint32Array(data, config.METADATA_BYTES, config.HISTOGRAM_BINS),
 
       // create views into extrema (Uint32 array of 8 bytes each)
-      extrema: {
-        txAmount: new Uint32Array(data, getOffset("txAmount"), config.METADATA_BYTES / 4)
+      extrema: new Uint32Array(data, 0, config.METADATA_BYTES / 4),
+
+      addValue: function (value) {
+        this.extrema[0] = Math.min(this.extrema[0], value);
+        this.extrema[1] = Math.max(this.extrema[1], value);
+        this.bins[findBin(value)]++;
       },
 
-      addValue: function (name, value) {
-        this.extrema[name][0] = Math.min(this.extrema[name][0], value);
-        this.extrema[name][1] = Math.max(this.extrema[name][1], value);
-        this.bins[name][findBin(value)]++;
+      sumBelowBucket: function (bucket) {
+        return d3.sum(new Uint32Array(data, config.METADATA_BYTES, bucket * config.BINS_PER_BUCKET + 1));
       },
 
-      sumBelowBucket: function (name, bucket) {
-        return d3.sum(new Uint32Array(data, getOffset(name) + config.METADATA_BYTES, bucket * config.BINS_PER_BUCKET + 1));
-      },
-
-      formatHistogram: function (name, bucketOffset) {
+      formatHistogram: function (bucketOffset) {
         // return only the bins within the largest bucket,
         // collapsing all smaller buckets into the 1st element of the largest one
-        var bucket = findBucket(this.extrema[name][1]);
+        var bucket = findBucket(this.extrema[1]);
+        var ret, maxValue;
         if (bucket === 0) {
           // special case, just return the first bucket
-          return new Uint32Array(data, getOffset(name) + config.METADATA_BYTES, config.BINS_PER_BUCKET + 1);
+          ret = new Uint32Array(data, config.METADATA_BYTES, config.BINS_PER_BUCKET + 1);
+          maxValue = d3.max(ret);
+        } else {
+          if (bucketOffset !== undefined) {
+            bucket -= bucketOffset;
+          }
+          // produce a new array of config.BINS_PER_BUCKET+1 values
+          var newBuf = new ArrayBuffer((config.BINS_PER_BUCKET + 1) * 4);
+          var bucketData = new Uint32Array(data, config.METADATA_BYTES + (config.HISTOGRAM_BINS - 1) * 4 * (bucket / config.NUM_BUCKETS) + 4, config.BINS_PER_BUCKET);
+          ret = new Uint32Array(newBuf);
+          ret[0] = this.sumBelowBucket(bucket);
+          for (var i = 0; i < config.BINS_PER_BUCKET; i++) {
+            ret[i + 1] = bucketData[i];
+          }
+          maxValue = Math.max(this.sumBelowBucket(bucket + bucketOffset), d3.max(ret));
         }
-        if (bucketOffset !== undefined) {
-          bucket -= bucketOffset;
-        }
-        // produce a new array of config.BINS_PER_BUCKET+1 values
-        var newBuf = new ArrayBuffer((config.BINS_PER_BUCKET + 1) * 4);
-        var bucketData = new Uint32Array(data, getOffset(name) + config.METADATA_BYTES + (config.HISTOGRAM_BINS - 1) * 4 * (bucket / config.NUM_BUCKETS) + 4, config.BINS_PER_BUCKET);
-        var ret = new Uint32Array(newBuf);
-        ret[0] = this.sumBelowBucket(name, bucket);
-        for (var i = 0; i < config.BINS_PER_BUCKET; i++) {
-          ret[i + 1] = bucketData[i];
-        }
-
-        var maxValue = Math.max(this.sumBelowBucket(name, bucket + bucketOffset), d3.max(ret));
         return {
           values: ret,
           bucket: bucket,

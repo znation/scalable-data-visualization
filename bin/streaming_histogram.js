@@ -1,7 +1,7 @@
 "use strict";
 
 var numBuckets = 10;
-var numBinsPerBucket = 20;
+var numBinsPerBucket = 100;
 var bins = numBinsPerBucket * numBuckets + 1; // supports values up to 10^10
 var numHistograms = 1;
 var metadataBytes = 8;
@@ -48,58 +48,50 @@ function findBin(n) {
   return ret + 1; // account for the "0" bin (values smaller than SMALLEST_VALUE)
 };
 
-function getOffset(name) {
-  if (name === "txAmount") {
-    return 0;
-  }
-};
-
 module.exports = {
   config: config,
   findBin: findBin,
   histogram: function (data) {
     // create views into bins (Uint32 array of HISTOGRAM_BINS length each)
     return {
-      bins: {
-        txAmount: new Uint32Array(data, getOffset("txAmount") + config.METADATA_BYTES, config.HISTOGRAM_BINS)
-      },
+      bins: new Uint32Array(data, config.METADATA_BYTES, config.HISTOGRAM_BINS),
 
       // create views into extrema (Uint32 array of 8 bytes each)
-      extrema: {
-        txAmount: new Uint32Array(data, getOffset("txAmount"), config.METADATA_BYTES / 4)
+      extrema: new Uint32Array(data, 0, config.METADATA_BYTES / 4),
+
+      addValue: function (value) {
+        this.extrema[0] = Math.min(this.extrema[0], value);
+        this.extrema[1] = Math.max(this.extrema[1], value);
+        this.bins[findBin(value)]++;
       },
 
-      addValue: function (name, value) {
-        this.extrema[name][0] = Math.min(this.extrema[name][0], value);
-        this.extrema[name][1] = Math.max(this.extrema[name][1], value);
-        this.bins[name][findBin(value)]++;
+      sumBelowBucket: function (bucket) {
+        return d3.sum(new Uint32Array(data, config.METADATA_BYTES, bucket * config.BINS_PER_BUCKET + 1));
       },
 
-      sumBelowBucket: function (name, bucket) {
-        return d3.sum(new Uint32Array(data, getOffset(name) + config.METADATA_BYTES, bucket * config.BINS_PER_BUCKET + 1));
-      },
-
-      formatHistogram: function (name, bucketOffset) {
+      formatHistogram: function (bucketOffset) {
         // return only the bins within the largest bucket,
         // collapsing all smaller buckets into the 1st element of the largest one
-        var bucket = findBucket(this.extrema[name][1]);
+        var bucket = findBucket(this.extrema[1]);
+        var ret, maxValue;
         if (bucket === 0) {
           // special case, just return the first bucket
-          return new Uint32Array(data, getOffset(name) + config.METADATA_BYTES, config.BINS_PER_BUCKET + 1);
+          ret = new Uint32Array(data, config.METADATA_BYTES, config.BINS_PER_BUCKET + 1);
+          maxValue = d3.max(ret);
+        } else {
+          if (bucketOffset !== undefined) {
+            bucket -= bucketOffset;
+          }
+          // produce a new array of config.BINS_PER_BUCKET+1 values
+          var newBuf = new ArrayBuffer((config.BINS_PER_BUCKET + 1) * 4);
+          var bucketData = new Uint32Array(data, config.METADATA_BYTES + (config.HISTOGRAM_BINS - 1) * 4 * (bucket / config.NUM_BUCKETS) + 4, config.BINS_PER_BUCKET);
+          ret = new Uint32Array(newBuf);
+          ret[0] = this.sumBelowBucket(bucket);
+          for (var i = 0; i < config.BINS_PER_BUCKET; i++) {
+            ret[i + 1] = bucketData[i];
+          }
+          maxValue = Math.max(this.sumBelowBucket(bucket + bucketOffset), d3.max(ret));
         }
-        if (bucketOffset !== undefined) {
-          bucket -= bucketOffset;
-        }
-        // produce a new array of config.BINS_PER_BUCKET+1 values
-        var newBuf = new ArrayBuffer((config.BINS_PER_BUCKET + 1) * 4);
-        var bucketData = new Uint32Array(data, getOffset(name) + config.METADATA_BYTES + (config.HISTOGRAM_BINS - 1) * 4 * (bucket / config.NUM_BUCKETS) + 4, config.BINS_PER_BUCKET);
-        var ret = new Uint32Array(newBuf);
-        ret[0] = this.sumBelowBucket(name, bucket);
-        for (var i = 0; i < config.BINS_PER_BUCKET; i++) {
-          ret[i + 1] = bucketData[i];
-        }
-
-        var maxValue = Math.max(this.sumBelowBucket(name, bucket + bucketOffset), d3.max(ret));
         return {
           values: ret,
           bucket: bucket,

@@ -52,12 +52,12 @@ var process = function (ws) {
       // update histogram of txAmt per day
       /*
       d3.range(txAmount).map(function() {
-        histogram.addValue('txAmount', dateIdx);
+        histogram.addValue(dateIdx);
       });
       */
 
       // update histogram of txAmount
-      histogram.addValue("txAmount", txAmount);
+      histogram.addValue(txAmount);
       txAmount = 0;
 
       // update date counter

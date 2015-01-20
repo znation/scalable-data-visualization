@@ -9,15 +9,6 @@ var Axis = require('./axis.jsx');
 var Bars = require('./bars.jsx');
 var config = require('../streaming_histogram.js').config;
 
-// utility functions
-function regularArray(typedArray) {
-  var arr = new Array(typedArray.length);
-  for (var i=0; i<typedArray.length; i++) {
-    arr[i] = typedArray[i];
-  }
-  return arr;
-}
-
 module.exports = React.createClass({
   /* component functions */
   zoom: function(amt) {
@@ -41,25 +32,26 @@ module.exports = React.createClass({
     return { bucketOffset: 0 };
   },
   render: function() {
-    // TODO -- figure out how to cleanly map over typed arrays
-    // without having to copy to a regular array
-    var data = this.props.data.formatHistogram(this.props.name, this.state.bucketOffset);
-    var values = regularArray(data.values);
+    var data = this.props.data.formatHistogram(this.state.bucketOffset);
 
     var width = 630;
     var height = Math.floor(width/2);
     var xScale = d3.scale.linear()
-      .domain([0, values.length])
+      .domain([0, data.values.length])
       .range([0, width]);
     var yScale = d3.scale.linear()
-      .domain([d3.min(values), data.maxValue])
+      .domain([d3.min(data.values), data.maxValue])
       .range([0, height]);
     return (
       <div
         className={'histogram ' + this.props.className}
         onMouseDown={this.preventDefault}>
         <p>
-          Viewing at 10^{data.bucket} scale.
+          {data.bucket ? (
+            <span>
+              Viewing at 10^{data.bucket} scale.
+            </span>
+          ) : <span>Loading...</span>}
           {this.state.bucketOffset === 0 ? null : (
             <span>&nbsp;(
               <a
@@ -90,7 +82,7 @@ module.exports = React.createClass({
           <Axis
             scale={
               d3.scale.linear()
-                .domain([d3.min(values), data.maxValue])
+                .domain([d3.min(data.values), data.maxValue])
                 .range([height, 0])
             }
             x={99}
@@ -98,8 +90,7 @@ module.exports = React.createClass({
             axis='y'
           />
           <Bars
-            values={values}
-            bucket={data.bucket}
+            data={data}
             width={width}
             height={height}
             scales={{
