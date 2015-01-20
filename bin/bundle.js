@@ -29644,8 +29644,11 @@ var config = require("../streaming_histogram.js").config;
 var hist = require("../streaming_histogram.js").histogram;
 
 module.exports = React.createClass({ displayName: "exports",
+  setActiveTab: function (name) {
+    this.setState({ activeTab: name });
+  },
   getInitialState: function () {
-    return { activeTab: "txAmount", histogram: hist(config.TOTAL_BYTES) };
+    return { activeTab: "Transaction Amounts", histogram: hist(config.TOTAL_BYTES) };
   },
   componentDidMount: function () {
     var wsc = new ws("ws://localhost:8081");
@@ -29655,16 +29658,19 @@ module.exports = React.createClass({ displayName: "exports",
     }).bind(this);
   },
   render: function () {
-    return React.createElement("div", { className: "container" }, React.createElement("div", { className: "row" }, React.createElement("div", { className: "col-xs-12" }, React.createElement("h1", null, "Scalable Data Visualization"), React.createElement("h2", null, "Visualizing the Bitcoin Blockchain"))), React.createElement("div", { className: "row" }, React.createElement("div", { className: "col-xs-12" }, React.createElement("ul", { className: "nav nav-tabs", style: { marginBottom: 20 } }, React.createElement("li", {
-      role: "presentation",
-      className: cx({ active: this.state.activeTab === "txAmount" })
-    }, React.createElement("a", {
-      href: "javascript:",
-      onClick: this.setState.bind(null, { activeTab: "txAmount" })
-    }, "Transaction Amounts"))), React.createElement(Histogram, {
+    return React.createElement("div", { className: "container" }, React.createElement("div", { className: "row" }, React.createElement("div", { className: "col-xs-12" }, React.createElement("h1", null, "Scalable Data Visualization"), React.createElement("h2", null, "Visualizing the Bitcoin Blockchain"))), React.createElement("div", { className: "row" }, React.createElement("div", { className: "col-xs-12" }, React.createElement("ul", { className: "nav nav-tabs", style: { marginBottom: 20 } }, ["Transaction Amounts", "Transaction Amount By Date"].map((function (name, idx) {
+      return React.createElement("li", {
+        key: idx,
+        role: "presentation",
+        className: cx({ active: this.state.activeTab === name })
+      }, React.createElement("a", {
+        href: "javascript:",
+        onClick: this.setActiveTab.bind(null, name)
+      }, name));
+    }).bind(this))), React.createElement(Histogram, {
       data: this.state.histogram,
       name: "txAmount",
-      className: cx({ hide: this.state.activeTab !== "txAmount" }) }))));
+      className: cx({ hidden: this.state.activeTab !== "Transaction Amounts" }) }))));
   }
 });
 
@@ -29721,7 +29727,9 @@ module.exports = React.createClass({ displayName: "exports",
     var height = Math.floor(width / 2);
     var xScale = d3.scale.linear().domain([0, values.length]).range([0, width]);
     var yScale = d3.scale.linear().domain([d3.min(values), data.maxValue]).range([0, height]);
-    return React.createElement("div", { className: "histogram", onMouseDown: this.preventDefault }, React.createElement("p", null, "Viewing at 10^", data.bucket, " scale.", this.state.bucketOffset === 0 ? null : React.createElement("span", null, " (", React.createElement("a", {
+    return React.createElement("div", {
+      className: "histogram " + this.props.className,
+      onMouseDown: this.preventDefault }, React.createElement("p", null, "Viewing at 10^", data.bucket, " scale.", this.state.bucketOffset === 0 ? null : React.createElement("span", null, " (", React.createElement("a", {
       href: "javascript:",
       onClick: this.zoomOut
     }, "Zoom Out"), ")")), React.createElement("svg", {

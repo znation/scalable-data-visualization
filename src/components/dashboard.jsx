@@ -9,8 +9,11 @@ var config = require('../streaming_histogram.js').config;
 var hist = require('../streaming_histogram.js').histogram;
 
 module.exports = React.createClass({
+  setActiveTab: function(name) {
+    this.setState({activeTab: name});
+  },
   getInitialState: function() {
-    return { activeTab: 'txAmount', histogram: hist(config.TOTAL_BYTES) };
+    return { activeTab: 'Transaction Amounts', histogram: hist(config.TOTAL_BYTES) };
   },
   componentDidMount: function() {
     var wsc = new ws('ws://localhost:8081');
@@ -31,22 +34,27 @@ module.exports = React.createClass({
         <div className="row">
           <div className="col-xs-12">
             <ul className="nav nav-tabs" style={{marginBottom: 20}}>
-              <li
-                role="presentation"
-                className={cx({active: this.state.activeTab === 'txAmount'})}
-              >
-                <a
-                  href="javascript:"
-                  onClick={this.setState.bind(null, {activeTab:'txAmount'})}
-                >
-                  Transaction Amounts
-                </a>
-              </li>
+              {['Transaction Amounts', 'Transaction Amount By Date'].map(function(name, idx) {
+                return (
+                  <li
+                    key={idx}
+                    role="presentation"
+                    className={cx({active: this.state.activeTab === name})}
+                  >
+                    <a
+                      href="javascript:"
+                      onClick={this.setActiveTab.bind(null, name)}
+                    >
+                      {name}
+                    </a>
+                  </li>
+                );
+              }.bind(this))}
             </ul>
             <Histogram
               data={ this.state.histogram }
               name="txAmount"
-              className={cx({ hide: this.state.activeTab !== 'txAmount' })}
+              className={cx({ hidden: this.state.activeTab !== 'Transaction Amounts' })}
             />
           </div>
         </div>

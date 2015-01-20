@@ -55,7 +55,9 @@ module.exports = React.createClass({
       .domain([d3.min(values), data.maxValue])
       .range([0, height]);
     return (
-      <div className="histogram" onMouseDown={this.preventDefault}>
+      <div
+        className={'histogram ' + this.props.className}
+        onMouseDown={this.preventDefault}>
         <p>
           Viewing at 10^{data.bucket} scale.
           {this.state.bucketOffset === 0 ? null : (
