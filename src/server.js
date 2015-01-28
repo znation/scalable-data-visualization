@@ -6,7 +6,7 @@ var ws = require('ws');
 
 // internal deps
 var blockchain = require('./blockchain.js');
-var config = require('./histogram_by_date.js').config;
+var config = require('./transactions_by_date.js').config;
 
 // start up ws server
 var WebSocketServer = ws.Server
@@ -14,7 +14,7 @@ var WebSocketServer = ws.Server
 
 // allocate one block of ArrayBuffer for all histograms and extrema
 var data = new ArrayBuffer(config.TOTAL_BYTES);
-var histogram = require('./histogram_by_date.js').histogram(data);
+var histogram = require('./transactions_by_date.js').histogram(data);
 
 // utility functions
 function compareDates(d1, d2) {

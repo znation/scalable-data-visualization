@@ -33688,9 +33688,9 @@ var React = require("react/addons");
 var cx = React.addons.classSet;
 var ws = require("ws");
 
-var Histogram = require("./histogram_by_date.jsx");
-var config = require("../histogram_by_date.js").config;
-var hist = require("../histogram_by_date.js").histogram;
+var Histogram = require("./transactions_by_date.jsx");
+var config = require("../transactions_by_date.js").config;
+var hist = require("../transactions_by_date.js").histogram;
 
 module.exports = React.createClass({ displayName: "exports",
   setActiveTab: function (name) {
@@ -33715,7 +33715,7 @@ module.exports = React.createClass({ displayName: "exports",
   }
 });
 
-},{"../histogram_by_date.js":"/Users/zach/talk_demo/src/histogram_by_date.js","./histogram_by_date.jsx":"/Users/zach/talk_demo/src/components/histogram_by_date.jsx","react/addons":"/Users/zach/talk_demo/node_modules/react/addons.js","ws":"/Users/zach/talk_demo/node_modules/ws/lib/browser.js"}],"/Users/zach/talk_demo/src/components/histogram_by_date.jsx":[function(require,module,exports){
+},{"../transactions_by_date.js":"/Users/zach/talk_demo/src/transactions_by_date.js","./transactions_by_date.jsx":"/Users/zach/talk_demo/src/components/transactions_by_date.jsx","react/addons":"/Users/zach/talk_demo/node_modules/react/addons.js","ws":"/Users/zach/talk_demo/node_modules/ws/lib/browser.js"}],"/Users/zach/talk_demo/src/components/transactions_by_date.jsx":[function(require,module,exports){
 "use strict";
 
 // external deps
@@ -33767,7 +33767,7 @@ module.exports = React.createClass({ displayName: "exports",
   }
 });
 
-},{"./axis.jsx":"/Users/zach/talk_demo/src/components/axis.jsx","./bars.jsx":"/Users/zach/talk_demo/src/components/bars.jsx","d3":"/Users/zach/talk_demo/node_modules/d3/d3.js","moment":"/Users/zach/talk_demo/node_modules/moment/moment.js","react":"/Users/zach/talk_demo/node_modules/react/react.js"}],"/Users/zach/talk_demo/src/histogram_by_date.js":[function(require,module,exports){
+},{"./axis.jsx":"/Users/zach/talk_demo/src/components/axis.jsx","./bars.jsx":"/Users/zach/talk_demo/src/components/bars.jsx","d3":"/Users/zach/talk_demo/node_modules/d3/d3.js","moment":"/Users/zach/talk_demo/node_modules/moment/moment.js","react":"/Users/zach/talk_demo/node_modules/react/react.js"}],"/Users/zach/talk_demo/src/transactions_by_date.js":[function(require,module,exports){
 "use strict";
 
 var assert = require("assert");

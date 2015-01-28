@@ -4,9 +4,9 @@ var React = require('react/addons');
 var cx = React.addons.classSet;
 var ws = require('ws');
 
-var Histogram = require('./histogram_by_date.jsx');
-var config = require('../histogram_by_date.js').config;
-var hist = require('../histogram_by_date.js').histogram;
+var Histogram = require('./transactions_by_date.jsx');
+var config = require('../transactions_by_date.js').config;
+var hist = require('../transactions_by_date.js').histogram;
 
 module.exports = React.createClass({
   setActiveTab: function(name) {
