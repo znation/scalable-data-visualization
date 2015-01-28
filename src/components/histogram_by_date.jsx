@@ -3,6 +3,7 @@
 // external deps
 var React = require('react');
 var d3 = require('d3');
+var moment = require('moment');
 
 // internal deps
 var Axis = require('./axis.jsx');
@@ -29,9 +30,12 @@ module.exports = React.createClass({
           <Axis
             scale={scales.x}
             displayScale={
-              d3.scale.linear()
-                .domain([0, data.getBin(data.domain[1])])
-                .range([new Date(data.domain[0]), new Date(data.domain[1])])
+              d3.time.scale.utc()
+                .domain([new Date(data.domain[0]), new Date(data.domain[1])])
+                .range([0, data.getBin(data.domain[1])])
+            }
+            tickFormatter={
+              function(date) { return moment(date).format('MMM YY'); }
             }
             x={100}
             y={height+1}
@@ -39,6 +43,9 @@ module.exports = React.createClass({
           />
           <Axis
             scale={scales.y}
+            displayScale={
+              d3.scale.linear().domain([d3.max(values), 0]).range([0, d3.max(values)])
+            }
             x={99}
             y={0}
             axis='y'
