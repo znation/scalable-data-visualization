@@ -30604,23 +30604,25 @@ function translate(x, y) {
 
 module.exports = React.createClass({ displayName: "exports",
   render: function () {
-    var values = regularArray(this.props.data.getValues());
+    var data = this.props.data;
+    var values = regularArray(data.getValues());
     return React.createElement("g", { style: { transform: "translateX(100px)" } }, values.map((function (value, idx) {
       var click = null;
-      if (this.props.data.bucket !== 0 && idx === 0) {
+      if (data.bucket !== 0 && idx === 0) {
         // make the first bar clickable, to dive into the results there
         click = this.props.zoomIn;
       }
+      var scaleWidth = this.props.width / data.getBin(data.domain[1]) + 0.5;
       return React.createElement("rect", {
         fill: "#0a8cc4",
         key: idx,
         x: 0,
         y: 0,
-        width: this.props.width / values.length,
+        width: 1, /* size with CSS transform to allow transitions */
         height: 1, /* size with CSS transform to allow transitions */
         style: {
           cursor: click === null ? "auto" : "pointer",
-          transform: translate(this.props.scales.x(idx), this.props.height - this.props.scales.y(value)) + " scaleY(" + this.props.scales.y(value) + ")"
+          transform: translate(this.props.scales.x(idx), this.props.height - this.props.scales.y(value)) + " scaleY(" + this.props.scales.y(value) + ")" + " scaleX(" + scaleWidth + ")"
         },
         onClick: click });
     }).bind(this)));
@@ -30656,7 +30658,7 @@ module.exports = React.createClass({ displayName: "exports",
     }).bind(this);
   },
   render: function () {
-    return React.createElement("div", { className: "container" }, React.createElement("div", { className: "row" }, React.createElement("div", { className: "col-xs-12" }, React.createElement("h1", null, "Scalable Data Visualization"), React.createElement("h2", null, "Visualizing the Bitcoin Blockchain"))), React.createElement("div", { className: "row" }, React.createElement("div", { className: "col-xs-12" }, React.createElement(Histogram, {
+    return React.createElement("div", { className: "container" }, React.createElement("div", { className: "row" }, React.createElement("div", { className: "col-xs-12" }, React.createElement("h1", null, "Scalable Data Visualization"), React.createElement("h2", null, "Total Bitcoin transaction amount per day"))), React.createElement("br", null), React.createElement("div", { className: "row" }, React.createElement("div", { className: "col-xs-12" }, React.createElement(Histogram, {
       data: this.state.histogram }))));
   }
 });
@@ -30744,14 +30746,13 @@ module.exports = {
         if (this.domain[0] === 0 || this.domain[0] > time) {
           this.domain[0] = time;
         }
-        if (this.domain[1] === 0 || this.domain[1] < time) {
-          this.domain[1] = time;
-        }
-        assert(this.domain[0] <= this.domain[1], this.domain[0] + " should be less than " + this.domain[1]);
         var idx = this.getBin(time);
         if (idx >= bins) {
           // ignore dates out of range
           return;
+        }
+        if (this.domain[1] === 0 || this.domain[1] < time) {
+          this.domain[1] = time;
         }
         assert(idx >= 0);
         this.bins[idx] += value;

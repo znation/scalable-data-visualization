@@ -19,23 +19,25 @@ function translate(x, y) {
 
 module.exports = React.createClass({
   render: function() {
-    var values = regularArray(this.props.data.getValues());
+    var data = this.props.data;
+    var values = regularArray(data.getValues());
     return (
       <g style={{transform: 'translateX(100px)'}}>
         {values.map(function(value, idx) {
           var click = null;
-          if (this.props.data.bucket !== 0 &&
+          if (data.bucket !== 0 &&
               idx === 0) {
             // make the first bar clickable, to dive into the results there
             click = this.props.zoomIn;
           }
+          var scaleWidth = (this.props.width/(data.getBin(data.domain[1]))) + 0.5;
           return (
             <rect
               fill='#0a8cc4'
               key={idx}
               x={0}
               y={0}
-              width={this.props.width/values.length}
+              width={1} /* size with CSS transform to allow transitions */
               height={1} /* size with CSS transform to allow transitions */
               style={{
                 cursor: click === null ? 'auto' : 'pointer',
@@ -43,6 +45,7 @@ module.exports = React.createClass({
                   this.props.scales.x(idx),
                   this.props.height - this.props.scales.y(value)
                 ) + ' scaleY(' + this.props.scales.y(value) + ')'
+                + ' scaleX(' + scaleWidth + ')'
               }}
               onClick={click}
             />

@@ -31,9 +31,10 @@ module.exports = React.createClass({
         <div className="row">
           <div className="col-xs-12">
             <h1>Scalable Data Visualization</h1>
-            <h2>Visualizing the Bitcoin Blockchain</h2>
+            <h2>Total Bitcoin transaction amount per day</h2>
           </div>
         </div>
+        <br />
         <div className="row">
           <div className="col-xs-12">
             <Histogram
