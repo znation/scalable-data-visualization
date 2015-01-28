@@ -6,6 +6,8 @@ module.exports = React.createClass({
   render: function() {
     var axis = this.props.axis;
     var other = this.props.axis === 'x' ? 'y' : 'x';
+    var tickOffsetAxis = this.props.axis === 'x' ? 0 : 5;
+    var tickOffsetOther = this.props.axis === 'x' ? 24 : -16;
     var tickLength = this.props.axis === 'x' ? 8 : -8;
     var scale = this.props.scale;
     var displayScale = this.props.displayScale || d3.scale.identity();
@@ -23,7 +25,7 @@ module.exports = React.createClass({
     return (
       <g>
         {axisLine}
-        {displayScale.ticks(8).map(function(tick, idx) {
+        {displayScale.nice(6).ticks(6).map(function(tick, idx) {
           var lineProps = {
             stroke: 'black',
             strokeWidth: 2
@@ -33,9 +35,11 @@ module.exports = React.createClass({
           lineProps[other + '1'] = this.props[other];
           lineProps[other + '2'] = this.props[other] + tickLength;
           var line = React.DOM.line(lineProps);
-          var labelProps = {};
-          labelProps[axis] = scale(displayScale(tick)) + this.props[axis];
-          labelProps[other] = this.props[other] + (tickLength * 4);
+          var labelProps = {
+            textAnchor: axis === 'x' ? 'middle' : 'end'
+          };
+          labelProps[axis] = scale(displayScale(tick)) + this.props[axis] + tickOffsetAxis;
+          labelProps[other] = this.props[other] + tickOffsetOther;
           var label = React.DOM.text(labelProps, tickFormatter(tick));
           return (
             <g key={idx}>
