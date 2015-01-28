@@ -25,7 +25,7 @@ module.exports = React.createClass({
     return (
       <g>
         {axisLine}
-        {displayScale.nice(6).ticks(6).map(function(tick, idx) {
+        {displayScale.ticks(6).map(function(tick, idx) {
           var lineProps = {
             stroke: 'black',
             strokeWidth: 2

@@ -51,7 +51,7 @@ var process = function (ws) {
 
     var currentDate = new Date(block.header.time * 1000);
     // update histogram of txAmt per day
-    histogram.addValue(currentDate, txAmount);
+    var added = histogram.addValue(currentDate, txAmount);
 
     // reporting
     var interval = Math.floor(bytesRead / totalSize * 40000);
@@ -59,6 +59,12 @@ var process = function (ws) {
       ws.send(new Buffer(new Uint8Array(data)));
       previousInterval = interval;
       console.log(interval / 400 + "% complete at " + currentDate);
+    }
+
+    // terminate when done
+    if (!added) {
+      // past the date range the histogram can accommodate
+      blockchain.close();
     }
   });
 };

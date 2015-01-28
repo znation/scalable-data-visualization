@@ -33613,7 +33613,7 @@ module.exports = React.createClass({ displayName: "exports",
     axisLineProps[other + "1"] = this.props[other];
     axisLineProps[other + "2"] = this.props[other];
     var axisLine = React.DOM.line(axisLineProps);
-    return React.createElement("g", null, axisLine, displayScale.nice(6).ticks(6).map((function (tick, idx) {
+    return React.createElement("g", null, axisLine, displayScale.ticks(6).map((function (tick, idx) {
       var lineProps = {
         stroke: "black",
         strokeWidth: 2
@@ -33813,13 +33813,14 @@ module.exports = {
         var idx = this.getBin(time);
         if (idx >= bins) {
           // ignore dates out of range
-          return;
+          return false;
         }
         if (this.domain[1] === 0 || this.domain[1] < time) {
           this.domain[1] = time;
         }
         assert(idx >= 0);
         this.bins[idx] += value;
+        return true;
       },
 
       getValues: function () {
