@@ -16,6 +16,16 @@ module.exports = React.createClass({
     var width = 630;
     var height = Math.floor(width/2);
 
+    if (data.domain[0] === 0) {
+      // no data yet
+      return (
+        <div>
+          <span>Loading...&nbsp;</span>
+          <span className="glyphicon glyphicon-time" aria-hidden="true"></span>
+        </div>
+      );
+    }
+
     var scales = {
       x: d3.scale.linear().domain([0, data.getBin(data.domain[1])]).range([0, width]),
       y: d3.scale.linear().domain([0, d3.max(values)]).range([0, height])

@@ -33734,6 +33734,11 @@ module.exports = React.createClass({ displayName: "exports",
     var width = 630;
     var height = Math.floor(width / 2);
 
+    if (data.domain[0] === 0) {
+      // no data yet
+      return React.createElement("div", null, React.createElement("span", null, "Loading... "), React.createElement("span", { className: "glyphicon glyphicon-time", "aria-hidden": "true" }));
+    }
+
     var scales = {
       x: d3.scale.linear().domain([0, data.getBin(data.domain[1])]).range([0, width]),
       y: d3.scale.linear().domain([0, d3.max(values)]).range([0, height])
