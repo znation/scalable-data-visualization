@@ -20,7 +20,7 @@ module.exports = {
   },
   read: function (cb, sampleRate) {
     if (sampleRate === undefined) {
-      sampleRate = 0.01; // default to 1% sample
+      sampleRate = 1; // default to 100% sample
     }
     closed = false;
     // read the blockchain

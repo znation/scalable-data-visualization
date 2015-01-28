@@ -11,8 +11,14 @@ var Bars = require('./bars.jsx');
 module.exports = React.createClass({
   render: function() {
     var data = this.props.data;
+    var values = data.getValues();
     var width = 630;
     var height = Math.floor(width/2);
+
+    var scales = {
+      x: d3.scale.linear().domain([0, data.getBin(data.domain[1])]).range([0, width]),
+      y: d3.scale.linear().domain([0, d3.max(values)]).range([0, height])
+    };
 
     return (
       <div className={'histogram ' + this.props.className}>
@@ -21,23 +27,18 @@ module.exports = React.createClass({
           height={height + 100}
         >
           <Axis
-            scale={
+            scale={scales.x}
+            displayScale={
               d3.scale.linear()
-                .domain([1, 10].map(function(x) {
-                  return x * Math.pow(10, data.bucket) * config.SMALLEST_VALUE;
-                }))
-                .range([0, width])
+                .domain([0, data.getBin(data.domain[1])])
+                .range([new Date(data.domain[0]), new Date(data.domain[1])])
             }
             x={100}
             y={height+1}
             axis='x'
           />
           <Axis
-            scale={
-              d3.scale.linear()
-                .domain([d3.min(data.values), data.maxValue])
-                .range([height, 0])
-            }
+            scale={scales.y}
             x={99}
             y={0}
             axis='y'
@@ -46,10 +47,7 @@ module.exports = React.createClass({
             data={data}
             width={width}
             height={height}
-            scales={{
-              x: xScale,
-              y: yScale
-            }}
+            scales={scales}
             zoomIn={this.zoomIn}
           />
         </svg>

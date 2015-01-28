@@ -1,13 +1,12 @@
 'use strict';
 
 // external deps
-var d3 = require('d3');
 var staticServer = require('node-static');
 var ws = require('ws');
 
 // internal deps
 var blockchain = require('./blockchain.js');
-var config = require('./streaming_histogram.js').config;
+var config = require('./histogram_by_date.js').config;
 
 // start up ws server
 var WebSocketServer = ws.Server
@@ -15,7 +14,7 @@ var WebSocketServer = ws.Server
 
 // allocate one block of ArrayBuffer for all histograms and extrema
 var data = new ArrayBuffer(config.TOTAL_BYTES);
-var histogram = require('./streaming_histogram.js').histogram(data);
+var histogram = require('./histogram_by_date.js').histogram(data);
 
 // utility functions
 function compareDates(d1, d2) {
@@ -32,39 +31,14 @@ var process = function(ws) {
     blockchain.close();
   });
 
-  var previousHundredthPct = 0;
-  var previousDate = null;
-  var dateIdx = 0;
-  var txAmount = 0;
+  var previousInterval = 0;
 
   // report first (resume for reset client)
   ws.send(new Buffer(new Uint8Array(data)));
 
   // build a histogram of tx amount / date, for all blocks
   blockchain.read(function(block, bytesRead, totalSize) {
-    // compare dates
-    var currentDate = new Date(block.header.time * 1000);
-    if (previousDate === null) {
-      previousDate = currentDate;
-    }
-    if (!compareDates(previousDate, currentDate)) {
-      // TODO -- this code will omit any transactions recorded on the last day
-
-      // update histogram of txAmt per day
-      /*
-      d3.range(txAmount).map(function() {
-        histogram.addValue(dateIdx);
-      });
-      */
-
-      // update histogram of txAmount
-      histogram.addValue(txAmount);
-      txAmount = 0;
-
-      // update date counter
-      dateIdx++;
-      previousDate = currentDate;
-    }
+    var txAmount = 0;
 
     block.txs.forEach(function(tx) {
       // get the total tx amount
@@ -76,12 +50,16 @@ var process = function(ws) {
       txAmount += txAmtThisBlock;
     });
 
+    var currentDate = new Date(block.header.time * 1000);
+    // update histogram of txAmt per day
+    histogram.addValue(currentDate, txAmount);
+
     // reporting
-    var hundredthPct = Math.floor((bytesRead / totalSize) * 10000);
-    if (hundredthPct !== previousHundredthPct) {
+    var interval = Math.floor((bytesRead / totalSize) * 40000);
+    if (interval !== previousInterval) {
       ws.send(new Buffer(new Uint8Array(data)));
-      previousHundredthPct = hundredthPct;
-      console.log((hundredthPct / 100) + '% complete');
+      previousInterval = interval;
+      console.log((interval / 400) + '% complete at ' + currentDate);
     }
   });
 };

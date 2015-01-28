@@ -19,7 +19,7 @@ function translate(x, y) {
 
 module.exports = React.createClass({
   render: function() {
-    var values = regularArray(this.props.data.values);
+    var values = regularArray(this.props.data.getValues());
     return (
       <g style={{transform: 'translateX(100px)'}}>
         {values.map(function(value, idx) {

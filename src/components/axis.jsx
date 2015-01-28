@@ -8,6 +8,7 @@ module.exports = React.createClass({
     var other = this.props.axis === 'x' ? 'y' : 'x';
     var tickLength = this.props.axis === 'x' ? 8 : -8;
     var scale = this.props.scale;
+    var displayScale = this.props.displayScale || this.props.scale;
     var [min, max] = scale.domain();
     var axisLineProps = {
       stroke: 'black',
@@ -21,7 +22,7 @@ module.exports = React.createClass({
     return (
       <g>
         {axisLine}
-        {scale.ticks().map(function(tick, idx) {
+        {displayScale.ticks().map(function(tick, idx) {
           var lineProps = {
             stroke: 'black',
             strokeWidth: 2
@@ -31,9 +32,7 @@ module.exports = React.createClass({
           lineProps[other + '1'] = this.props[other];
           lineProps[other + '2'] = this.props[other] + tickLength;
           var line = React.DOM.line(lineProps);
-          var labelProps = {
-            
-          };
+          var labelProps = {};
           labelProps[axis] = scale(tick) + this.props[axis];
           labelProps[other] = this.props[other] + (tickLength * 4);
           var label = React.DOM.text(labelProps, tick);
