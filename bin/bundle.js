@@ -33720,6 +33720,7 @@ module.exports = React.createClass({ displayName: "exports",
 "use strict";
 
 var React = require("react/addons");
+var ReactCSSTransitionGroup = React.addons.CSSTransitionGroup;
 var moment = require("moment");
 
 // events from https://en.bitcoin.it/wiki/History
@@ -33728,13 +33729,13 @@ events.reverse(); // will display backwards (newest on top)
 
 module.exports = React.createClass({ displayName: "exports",
   render: function () {
-    return React.createElement("ul", { className: "list-group" }, events.filter((function (evt) {
+    return React.createElement("ul", { className: "list-group" }, React.createElement(ReactCSSTransitionGroup, { transitionName: "history-events" }, events.filter((function (evt) {
       return evt[0].getTime() <= this.props.now;
     }).bind(this)).map((function (evt) {
       var date = evt[0];
       var text = evt[1];
       return React.createElement("li", { className: "list-group-item", key: text }, React.createElement("span", { className: "label label-primary" }, moment(date).calendar()), React.createElement("span", null, text));
-    }).bind(this)));
+    }).bind(this))));
   }
 });
 

@@ -1,6 +1,7 @@
 'use strict';
 
 var React = require('react/addons');
+var ReactCSSTransitionGroup = React.addons.CSSTransitionGroup;
 var moment = require('moment');
 
 // events from https://en.bitcoin.it/wiki/History
@@ -42,20 +43,22 @@ module.exports = React.createClass({
   render: function() {
     return (
       <ul className="list-group">
-        {events.filter(function(evt) {
-          return evt[0].getTime() <= this.props.now;
-        }.bind(this)).map(function(evt) {
-          var date = evt[0];
-          var text = evt[1];
-          return (
-            <li className="list-group-item" key={text}>
-              <span className="label label-primary">
-                {moment(date).calendar()}
-              </span>
-              <span>{text}</span>
-            </li>
-          );
-        }.bind(this))}
+        <ReactCSSTransitionGroup transitionName="history-events">
+          {events.filter(function(evt) {
+            return evt[0].getTime() <= this.props.now;
+          }.bind(this)).map(function(evt) {
+            var date = evt[0];
+            var text = evt[1];
+            return (
+              <li className="list-group-item" key={text}>
+                <span className="label label-primary">
+                  {moment(date).calendar()}
+                </span>
+                <span>{text}</span>
+              </li>
+            );
+          }.bind(this))}
+        </ReactCSSTransitionGroup>
       </ul>
     );
   }
