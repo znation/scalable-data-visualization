@@ -55,11 +55,11 @@ var process = function(ws) {
     var added = histogram.addValue(currentDate, txAmount);
 
     // reporting
-    var interval = Math.floor((bytesRead / totalSize) * 100000);
+    var interval = Math.floor((bytesRead / totalSize) * 20000);
     if (interval !== previousInterval) {
       ws.send(new Buffer(new Uint8Array(data)));
       previousInterval = interval;
-      console.log((interval / 1000) + '% complete at ' + currentDate);
+      console.log((interval / 200) + '% complete at ' + currentDate);
     }
 
     // terminate when done
