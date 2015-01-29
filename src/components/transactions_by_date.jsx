@@ -56,6 +56,9 @@ module.exports = React.createClass({
             displayScale={
               d3.scale.linear().domain([d3.max(values), 0]).range([0, d3.max(values)])
             }
+            tickFormatter={
+              function(t) { return t.toLocaleString(); }
+            }
             x={99}
             y={0}
             axis='y'
