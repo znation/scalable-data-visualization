@@ -5,3 +5,9 @@
 .histogram rect:hover {
   fill: #6ecef7;
 }
+.list-group-item {
+  font-size: 24px;
+}
+.list-group-item > .label {
+  margin-right: 20px;
+}

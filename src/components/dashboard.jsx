@@ -5,6 +5,7 @@ var cx = React.addons.classSet;
 var ws = require('ws');
 
 var Histogram = require('./transactions_by_date.jsx');
+var History = require('./history.jsx');
 var config = require('../transactions_by_date.js').config;
 var hist = require('../transactions_by_date.js').histogram;
 
@@ -40,6 +41,9 @@ module.exports = React.createClass({
             <Histogram
               data={ this.state.histogram }
             />
+          </div>
+          <div className="col-xs-12">
+            <History now={ this.state.histogram.domain[1] } />
           </div>
         </div>
       </div>
