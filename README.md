@@ -5,7 +5,7 @@ This is the demo code repository for the React.js Conf 2015 talk, [Scalable Data
 
 The React.js component source is [here](https://github.com/znation/scalable-data-visualization/tree/master/src/components).
 
-Presentation slides are viewable [here](https://docs.google.com/presentation/d/1DDlR6Hd03G2HcIjHzEkUf9GhX-bbaDyIl0CTUNsO1rI/pub?start=false&loop=false&delayms=60000).
+Presentation slides are viewable [here](https://docs.google.com/presentation/d/1DDlR6Hd03G2HcIjHzEkUf9GhX-bbaDyIl0CTUNsO1rI/pub?start=false&loop=false&delayms=60000) and a video of the presentation is available [here](https://www.youtube.com/watch?v=2ii1lEkIv1s).
 
 ## Running the demo
 
