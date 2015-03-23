@@ -1,9 +1,5 @@
 .histogram rect {
-  fill: #0a8cc4;
   transition: 0.5s;
-}
-.histogram rect:hover {
-  fill: #6ecef7;
 }
 .list-group-item {
   font-size: 24px;

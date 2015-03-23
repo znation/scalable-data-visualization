@@ -33665,8 +33665,9 @@ module.exports = React.createClass({ displayName: "exports",
         click = this.props.zoomIn;
       }
       var scaleWidth = this.props.width / data.getBin(data.domain[1]) + 0.5;
+      var highlight = this.props.highlightIdx !== null && Math.abs(this.props.highlightIdx - idx) <= 1;
       return React.createElement("rect", {
-        fill: "#0a8cc4",
+        fill: highlight ? "#b0007f" : "#0a8cc4",
         key: idx,
         x: 0,
         y: 0,
@@ -33694,14 +33695,14 @@ var config = require("../transactions_by_date.js").config;
 var hist = require("../transactions_by_date.js").histogram;
 
 module.exports = React.createClass({ displayName: "exports",
-  setActiveTab: function (name) {
-    this.setState({ activeTab: name });
-  },
   getInitialState: function () {
     return {
-      activeTab: "Transaction Amounts",
-      histogram: hist(new ArrayBuffer(config.TOTAL_BYTES))
+      histogram: hist(new ArrayBuffer(config.TOTAL_BYTES)),
+      hoverDate: null
     };
+  },
+  onHover: function (date) {
+    this.setState({ hoverDate: date });
   },
   componentDidMount: function () {
     var wsc = new ws("ws://localhost:8081");
@@ -33712,7 +33713,12 @@ module.exports = React.createClass({ displayName: "exports",
   },
   render: function () {
     return React.createElement("div", { className: "container" }, React.createElement("div", { className: "row" }, React.createElement("div", { className: "col-xs-12" }, React.createElement("h1", null, "Scalable Data Visualization"), React.createElement("h2", null, "Total Bitcoin transaction amount per day"))), React.createElement("br", null), React.createElement("div", { className: "row" }, React.createElement("div", { className: "col-xs-12" }, React.createElement(Histogram, {
-      data: this.state.histogram })), React.createElement("div", { className: "col-xs-12" }, React.createElement(History, { now: this.state.histogram.domain[1] }))));
+      data: this.state.histogram,
+      highlightIdx: this.state.hoverDate === null ? null : Math.floor((this.state.hoverDate - new Date(this.state.histogram.domain[0])) / (1000 * 60 * 60 * 24))
+    })), React.createElement("div", { className: "col-xs-12" }, React.createElement(History, {
+      now: this.state.histogram.domain[1],
+      onHover: this.onHover,
+      hoverDate: this.state.hoverDate }))));
   }
 });
 
@@ -33734,7 +33740,16 @@ module.exports = React.createClass({ displayName: "exports",
     }).bind(this)).map((function (evt) {
       var date = evt[0];
       var text = evt[1];
-      return React.createElement("li", { className: "list-group-item", key: text }, React.createElement("span", { className: "label label-primary" }, moment(date).calendar()), React.createElement("span", null, text));
+      return React.createElement("li", {
+        className: "list-group-item",
+        key: text,
+        onMouseOver: this.props.onHover.bind(null, date),
+        onMouseOut: this.props.onHover.bind(null, null),
+        style: {
+          backgroundColor: this.props.hoverDate === date ? "#b0007f" : "white",
+          color: this.props.hoverDate === date ? "white" : "black"
+        }
+      }, React.createElement("span", { className: "label label-primary" }, moment(date).calendar()), React.createElement("span", null, text));
     }).bind(this))));
   }
 });
@@ -33796,7 +33811,8 @@ module.exports = React.createClass({ displayName: "exports",
       width: width,
       height: height,
       scales: scales,
-      zoomIn: this.zoomIn })));
+      zoomIn: this.zoomIn,
+      highlightIdx: this.props.highlightIdx })));
   }
 });
 
