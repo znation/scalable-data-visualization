@@ -69,6 +69,7 @@ module.exports = React.createClass({
             height={height}
             scales={scales}
             zoomIn={this.zoomIn}
+            highlightIdx={this.props.highlightIdx}
           />
         </svg>
       </div>

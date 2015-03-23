@@ -10,14 +10,14 @@ var config = require('../transactions_by_date.js').config;
 var hist = require('../transactions_by_date.js').histogram;
 
 module.exports = React.createClass({
-  setActiveTab: function(name) {
-    this.setState({activeTab: name});
-  },
   getInitialState: function() {
     return {
-      activeTab: 'Transaction Amounts',
-      histogram: hist(new ArrayBuffer(config.TOTAL_BYTES))
+      histogram: hist(new ArrayBuffer(config.TOTAL_BYTES)),
+      hoverDate: null
     };
+  },
+  onHover: function(date) {
+    this.setState({hoverDate: date});
   },
   componentDidMount: function() {
     var wsc = new ws('ws://localhost:8081');
@@ -40,10 +40,19 @@ module.exports = React.createClass({
           <div className="col-xs-12">
             <Histogram
               data={ this.state.histogram }
+              highlightIdx={
+                this.state.hoverDate === null ? null : (
+                  Math.floor((this.state.hoverDate - (new Date(this.state.histogram.domain[0]))) / (1000 * 60 * 60 * 24))
+                )
+              }
             />
           </div>
           <div className="col-xs-12">
-            <History now={ this.state.histogram.domain[1] } />
+            <History
+              now={ this.state.histogram.domain[1] }
+              onHover={this.onHover}
+              hoverDate={this.state.hoverDate}
+            />
           </div>
         </div>
       </div>

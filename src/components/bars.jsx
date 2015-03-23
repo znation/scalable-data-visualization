@@ -31,9 +31,10 @@ module.exports = React.createClass({
             click = this.props.zoomIn;
           }
           var scaleWidth = (this.props.width/(data.getBin(data.domain[1]))) + 0.5;
+          var highlight = this.props.highlightIdx !== null && Math.abs(this.props.highlightIdx - idx) <= 1;
           return (
             <rect
-              fill='#0a8cc4'
+              fill={highlight ? '#b0007f' : '#0a8cc4'}
               key={idx}
               x={0}
               y={0}

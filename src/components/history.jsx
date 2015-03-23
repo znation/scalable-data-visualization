@@ -50,7 +50,16 @@ module.exports = React.createClass({
             var date = evt[0];
             var text = evt[1];
             return (
-              <li className="list-group-item" key={text}>
+              <li
+                className="list-group-item"
+                key={text}
+                onMouseOver={this.props.onHover.bind(null, date)}
+                onMouseOut={this.props.onHover.bind(null, null)}
+                style={{
+                  backgroundColor: this.props.hoverDate === date ? '#b0007f' : 'white',
+                  color: this.props.hoverDate === date ? 'white' : 'black'
+                }}
+              >
                 <span className="label label-primary">
                   {moment(date).calendar()}
                 </span>
