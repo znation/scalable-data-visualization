@@ -10,7 +10,7 @@ Presentation slides are viewable [here](https://docs.google.com/presentation/d/1
 ## Running the demo
 
 1. Clone the repository.
-2. Download [bootstrap.dat](https://bitcoin.org/bin/blockchain/) into the `bin/` directory. It's big, so this will take a while.
+2. Download [bootstrap.dat](https://s3.amazonaws.com/dato-datasets/bitcoin/bootstrap.dat) into the `bin/` directory. It's big, so this will take a while.
 3. Run `npm install` in the repository root to bring in Node dependencies.
 4. When the download is complete, run:
 
